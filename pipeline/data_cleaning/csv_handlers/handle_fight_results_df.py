@@ -4,10 +4,18 @@ import numpy as np
 from .csv_handler import CSVHandler
 from .util import standardize_col, time_to_sec
 
-class FighterResultsHandler (CSVHandler):
+class FightResultsHandler (CSVHandler):
 
-    def __init__ (self):
-        super().__init__('ufc_fight_results.csv') # TODO: This is not the real path atm
+    # IMPORTANT: These have to be in this order with this logic
+    weightclasses = ["women's_strawweight", "women's_flyweight", "women's_bantamweight",
+                        'light_heavyweight', 'heavyweight', 'middleweight', 'welterweight',
+                         'lightweight', 'featherweight', 'bantamweight', 'flyweight']
+
+    def _weight_class_mapping (self, x) -> str:
+        for w in self.weightclasses:
+            if w in x:
+                return w
+        
 
     def clean (self):
         self.df.rename(columns={i: standardize_col(i) for i in self.df.columns}, inplace=True)
@@ -48,6 +56,5 @@ class FighterResultsHandler (CSVHandler):
         self.df.time = self.df.time.map(time_to_sec)
 
         self.df.weightclass = self.df.weightclass.map(lambda x: x.lower().replace(' ', '_'), na_action='ignore')
+        self.df.weightclass = self.df.weightclass.map(self._weight_class_mapping)
         self.df = pd.get_dummies(self.df, columns=['weightclass'])
-
-        # TODO: We need to count weightclasses
