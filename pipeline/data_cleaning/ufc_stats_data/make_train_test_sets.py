@@ -1,5 +1,6 @@
 from typing import Tuple, List, Optional
 from datetime import datetime
+from random import random
 
 import pandas as pd
 import numpy as np
@@ -12,6 +13,18 @@ def _get_fighter_progression (group):
     m, _ = np.linalg.lstsq(A, y, rcond=None)[0]
     return m
 
+def _scramble_fighter_order (group):
+    print (group.index)
+    if random() > 0.5:
+        return group
+    red_cols = list(filter(lambda x: x.endswith('red'), group.index))
+    for col in red_cols:
+        temp = group[col].copy()
+        group[col] = group[col[:-4]+'_blue']
+        group[col[:-4]+'_blue'] = temp
+    group['outcome'] = 0 if group['outcome'] == 0 else 0
+    return group
+
 
 def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, 
                           fight_results_df: pd.DataFrame, load_train_fpath: Optional[str]=None,
@@ -20,6 +33,7 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
     
     fighter_cumulative_df = fight_stats_df.sort_values(by=['fighter', 'date'], ascending=[True, True])
     split_date = fighter_cumulative_df.sort_values(by='date').loc[int(len(fighter_cumulative_df.index) * 0.85)].date
+    print(split_date)
     non_quant_stat_columns = list(set(['ko_tko', 'unanimous_decision', 'split_decision', 'submission', 'dr_stoppage', 'other']).union(
                              set(filter(lambda x: 'weight' in x, fight_stats_df.columns))))
     stat_columns = list(set(fight_stats_df.columns) - set(['event', 'bout', 'fighter', 'date', 'method', 'time_format', 'referee', 'details', 'outcome', 'url'])
@@ -54,28 +68,40 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
                     outcome = pd.Series([0], index=['outcome'])
             else:
                 if result.loc['outcome'] == 'W':
-                    outcome = pd.Series([1], index=['outcome'])
-                else:
                     outcome = pd.Series([0], index=['outcome'])
+                else:
+                    outcome = pd.Series([1], index=['outcome'])
             return pd.DataFrame(pd.concat([f1, f2, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         except Exception as e:
             print (f'{group.name}  ERROR: {e}')
             failures.append(group.name)
             return None
 
-
     if load_train_fpath:
         train = pd.read_csv(load_train_fpath)
     else:
-        train = fighter_cumulative_df[fighter_cumulative_df['date'] < split_date].groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
+        train: pd.DataFrame = fighter_cumulative_df[fighter_cumulative_df['date'] < split_date].groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
             .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights)) # .reset_index().drop(columns=['level_2'])
+        # ones_proportion = len(train[train['outcome'] == 1].index) / len(train.index)
+        # size = int((ones_proportion - 0.5) * len(train[train['outcome'] == 1].index))
+        # random_indices = np.random.choice(train[train['outcome'] == 1].index, size=size, replace=False)
+        # reds = list(filter(lambda x: x.endswith('red'), train.columns))
+        # blues = list(map(lambda x: x[:-4] + '_blue', reds))
+        # train.loc[random_indices, reds], train.loc[random_indices, blues] = train.loc[random_indices, blues].values, train.loc[random_indices, reds].values
+        # train.loc[random_indices, 'outcome'] = train.loc[random_indices].outcome.map(lambda x: 0 if x == 1 else 1)
+        train.to_csv('train.csv')
     if load_test_fpath:
         test = pd.read_csv(load_test_fpath)
     else:
         test = fighter_cumulative_df[fighter_cumulative_df['date'] >= split_date].groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
             .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights)) # .reset_index().drop(columns=['level_2'])
-    
-    return test, train
+        # random_indices = np.random.choice(test.index, size=int(0.5 * len(test.index)), replace=False)
+        # reds = list(filter(lambda x: x.endswith('red'), train.columns))
+        # blues = list(map(lambda x: x[:-4] + '_blue', reds))
+        # test.loc[random_indices, reds], test.loc[random_indices, blues] = test.loc[random_indices, blues].values, test.loc[random_indices, reds].values
+        # test.loc[random_indices].outcome = test.loc[random_indices].outcome.map(lambda x: 0 if x == 1 else 1)
+        test.to_csv('test.csv')
+    return train, test
 
 
 

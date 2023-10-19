@@ -1,14 +1,14 @@
 from datetime import datetime
 import pytz
 
-from data_cleaning.csv_handlers.handle_fight_results_df import FightResultsHandler
-from data_cleaning.csv_handlers.handle_fighters_df import FightersHandler
-from data_cleaning.csv_handlers.handle_fights_df import FightStatsHandler
-from data_cleaning.csv_handlers.handle_events_df import EventsHandler
-from data_cleaning.csv_handlers.handle_fight_details_df import FightDetailsHandler
-from data_cleaning.make_fighter_cumulative_df import make_fighter_cumulative_df
-from data_cleaning.make_fight_engineered_stats import make_fight_engineered_stats
-from data_cleaning.make_train_test_sets import make_train_test_sets
+from data_cleaning.ufc_stats_data.csv_handlers.handle_fight_results_df import FightResultsHandler
+from data_cleaning.ufc_stats_data.csv_handlers.handle_fighters_df import FightersHandler
+from data_cleaning.ufc_stats_data.csv_handlers.handle_fights_df import FightStatsHandler
+from data_cleaning.ufc_stats_data.csv_handlers.handle_events_df import EventsHandler
+from data_cleaning.ufc_stats_data.csv_handlers.handle_fight_details_df import FightDetailsHandler
+from data_cleaning.ufc_stats_data.make_fighter_cumulative_df import make_fighter_cumulative_df
+from data_cleaning.ufc_stats_data.make_fight_engineered_stats import make_fight_engineered_stats
+from data_cleaning.ufc_stats_data.make_train_test_sets import make_train_test_sets
 
 from training.xgb import train_xgb
 
@@ -41,10 +41,6 @@ if __name__=='__main__':
 
     train, test = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df,
                                        load_train_fpath='train.csv', load_test_fpath='test.csv')
-
-    # print (train.head())
-    # train.to_csv('train.csv')
-    # test.to_csv('test.csv')
 
     train_xgb(train, test)
 

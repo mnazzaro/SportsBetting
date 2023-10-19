@@ -43,6 +43,6 @@ def make_fight_engineered_stats (fight_stats_df: pd.DataFrame, load_fpath: Optio
     """ Make days since last fight column """
     fight_stats_df = fight_stats_df.sort_values(by=['fighter', 'date'], ascending=[True, True])
     fight_stats_df.date = pd.to_datetime(fight_stats_df.date)
-    fight_stats_df['days_since_last_fight'] = (fight_stats_df.date - fight_stats_df.groupby('fighter')['date'].shift(1)).map(lambda x: float(x.days))
+    fight_stats_df['days_since_last_fight'] = (fight_stats_df.date - fight_stats_df.groupby('fighter')['date'].shift(1)).map(lambda x: float(x.days)) # TODO: This should prob be by url
 
     return fight_stats_df
