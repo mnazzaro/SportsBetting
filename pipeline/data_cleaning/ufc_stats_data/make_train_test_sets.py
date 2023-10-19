@@ -77,6 +77,11 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
             failures.append(group.name)
             return None
 
+    all = fighter_cumulative_df.groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
+            .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights))
+    all.to_csv('all_training_data.csv')
+    return all
+
     if load_train_fpath:
         train = pd.read_csv(load_train_fpath)
     else:

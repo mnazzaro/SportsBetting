@@ -11,6 +11,7 @@ from data_cleaning.ufc_stats_data.make_fight_engineered_stats import make_fight_
 from data_cleaning.ufc_stats_data.make_train_test_sets import make_train_test_sets
 
 from training.xgb import train_xgb
+from training.data_filters import remove_wmma
 
 
 if __name__=='__main__':
@@ -42,6 +43,7 @@ if __name__=='__main__':
     train, test = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df,
                                        load_train_fpath='train.csv', load_test_fpath='test.csv')
 
+    train, test = remove_wmma(train), remove_wmma(test)
     train_xgb(train, test)
 
     print("FINISHED")
