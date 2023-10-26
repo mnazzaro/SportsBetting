@@ -1,4 +1,6 @@
 from datetime import datetime
+from sklearn.model_selection import train_test_split
+import pandas as pd
 import pytz
 
 from data_cleaning.ufc_stats_data.csv_handlers.handle_fight_results_df import FightResultsHandler
@@ -40,10 +42,12 @@ if __name__=='__main__':
     
     # engineered_fight_level_stats.to_csv('engineered_fight_level_stats.csv') # TODO: these types of big dataframe editing functions should write themselves to file
 
-    train, test = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df,
-                                       load_train_fpath='train.csv', load_test_fpath='test.csv')
+    # all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
+                                       # load_train_fpath='train.csv', load_test_fpath='test.csv')
 
-    train, test = remove_wmma(train), remove_wmma(test)
+    train, test = train_test_split(pd.read_csv('all_training_data.csv').drop(columns=['date']), shuffle=False)
+    print (train.head())
+    # train, test = remove_wmma(train), remove_wmma(test)
     train_xgb(train, test)
 
     print("FINISHED")

@@ -31,7 +31,7 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
                           load_test_fpath: Optional[str]=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
     
     
-    fighter_cumulative_df = fight_stats_df.sort_values(by=['fighter', 'date'], ascending=[True, True])
+    fighter_cumulative_df = fight_stats_df.sort_values(by='date', ascending=True)
     split_date = fighter_cumulative_df.sort_values(by='date').loc[int(len(fighter_cumulative_df.index) * 0.85)].date
     print(split_date)
     non_quant_stat_columns = list(set(['ko_tko', 'unanimous_decision', 'split_decision', 'submission', 'dr_stoppage', 'other']).union(
@@ -71,14 +71,15 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
                     outcome = pd.Series([0], index=['outcome'])
                 else:
                     outcome = pd.Series([1], index=['outcome'])
-            return pd.DataFrame(pd.concat([f1, f2, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
+            date = pd.Series([group.iloc[0]['date']], ['date'])
+            return pd.DataFrame(pd.concat([f1, f2, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         except Exception as e:
             print (f'{group.name}  ERROR: {e}')
             failures.append(group.name)
             return None
 
     all = fighter_cumulative_df.groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
-            .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights))
+            .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights)).sort_values(by='date')
     all.to_csv('all_training_data.csv')
     return all
 
