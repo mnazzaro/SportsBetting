@@ -80,7 +80,27 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
 
     all = fighter_cumulative_df.groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
             .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights)).sort_values(by='date')
+    # ones_proportion = len(all[all['outcome'] == 1].index) / len(all.index)
+    # size = int((ones_proportion - 0.5) * len(all[all['outcome'] == 1].index))
+    # random_indices = np.random.choice(all[all['outcome'] == 1].index, size=size, replace=False)
+    reds = list(filter(lambda x: x.endswith('red'), all.columns))
+    blues = list(map(lambda x: x[:-4] + '_blue', reds))
+    for col in reds:
+        if col != 'fighter_red':
+            all[col[:-4] + '_direct_difference'] = all[col] - all[col[:-4]+'_blue']
+    # all.loc[random_indices, reds], all.loc[random_indices, blues] = all.loc[random_indices, blues].values, all.loc[random_indices, reds].values
+    # all.loc[random_indices, 'outcome'] = all.loc[random_indices].outcome.map(lambda x: 0 if x == 1 else 1)
+    swapped: pd.DataFrame = all.copy()
+    print (swapped.head())
+    swapped[reds], swapped[blues] = swapped[blues], swapped[reds]
+    swapped[list(map(lambda x: x[:-4] + '_direct_difference', filter(lambda x: x != 'fighter_red', reds)))] = swapped[list(map(lambda x: x[:-4] + '_direct_difference', filter(lambda x: x != 'fighter_red', reds)))] * -1
+    swapped['outcome'] = swapped.outcome.map(lambda x: 0 if x == 1 else 1)
+    swapped.index = swapped.index.swaplevel('url_red', 'url_blue')
+    print (all[['fighter_red', 'fighter_blue', 'outcome']].head())
+    print (swapped[['fighter_red', 'fighter_blue', 'outcome']].head())
+    all = pd.concat([all, swapped])
     all.to_csv('all_training_data.csv')
+
     return all
 
     if load_train_fpath:

@@ -13,6 +13,7 @@ from data_cleaning.ufc_stats_data.make_fight_engineered_stats import make_fight_
 from data_cleaning.ufc_stats_data.make_train_test_sets import make_train_test_sets
 
 from training.xgb import train_xgb
+from training.get_prediction_data import make_matchup
 from training.data_filters import remove_wmma
 
 
@@ -26,6 +27,7 @@ if __name__=='__main__':
 
     print(f"Starting FightStatsHandler at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
     fight_stats_df = FightStatsHandler('../scrape_ufc_stats/ufc_fight_stats.csv')()
+    fight_stats_df.to_csv('engineered_fight_level_stats.csv')
 
     print(f"Starting EventsHandler at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
     events_df = EventsHandler('../scrape_ufc_stats/ufc_event_details.csv')()
@@ -43,11 +45,18 @@ if __name__=='__main__':
     # engineered_fight_level_stats.to_csv('engineered_fight_level_stats.csv') # TODO: these types of big dataframe editing functions should write themselves to file
 
     # all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
-                                       # load_train_fpath='train.csv', load_test_fpath='test.csv')
+    #                                 #    load_train_fpath='train.csv', load_test_fpath='test.csv')
 
-    train, test = train_test_split(pd.read_csv('all_training_data.csv').drop(columns=['date']), shuffle=False)
+    matchup = make_matchup(fighters_df, engineered_fight_level_stats, 'Jiri Prochazka', 'Alex Pereira', datetime(2023, 12, 3))
+    matchup.to_csv('matchup.csv')
+    matchup = pd.read_csv('matchup.csv')
+
+    train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False)
     print (train.head())
+    print (list(set(train.columns) - set(matchup.columns)))
     # train, test = remove_wmma(train), remove_wmma(test)
-    train_xgb(train, test)
+
+    all = pd.read_csv('all_training_data.csv')
+    train_xgb(train, test, matchup)
 
     print("FINISHED")
