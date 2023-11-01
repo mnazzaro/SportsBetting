@@ -98,7 +98,7 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
     swapped.index = swapped.index.swaplevel('url_red', 'url_blue')
     print (all[['fighter_red', 'fighter_blue', 'outcome']].head())
     print (swapped[['fighter_red', 'fighter_blue', 'outcome']].head())
-    all = pd.concat([all, swapped])
+    all = pd.concat([all, swapped]).sort_values(by='date')
     all.to_csv('all_training_data.csv')
 
     return all

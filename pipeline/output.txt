@@ -1,3 +1,3 @@
-Starting FightResultsHandler at 2023-10-17 12:34:18.797858-04:00
-Starting FightersHandler at 2023-10-17 12:34:19.123872-04:00
-Starting FightStatsHandler at 2023-10-17 12:34:19.137067-04:00
+Starting FightResultsHandler at 2023-10-31 16:04:02.885794-04:00
+Starting FightersHandler at 2023-10-31 16:04:03.011618-04:00
+Starting FightStatsHandler at 2023-10-31 16:04:03.019621-04:00

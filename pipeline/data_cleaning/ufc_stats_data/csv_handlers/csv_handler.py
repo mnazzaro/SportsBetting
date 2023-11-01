@@ -9,7 +9,7 @@ class CSVHandler (ABC):
         if preload:
             self.df = pd.read_csv (fpath)
         else:
-            self.df = pd.read_csv (fpath).dropna()
+            self.df = pd.read_csv (fpath)
         self.preload = preload
 
     @abstractmethod

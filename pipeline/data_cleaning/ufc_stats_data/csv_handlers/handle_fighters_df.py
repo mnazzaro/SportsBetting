@@ -15,6 +15,7 @@ class FightersHandler (CSVHandler):
         self.HEIGHT_RE = re.compile(r'(\d)\' (\d+)"')
 
     def _get_fighter_records (self, url: str):
+        try:
             req = requests.get(url)
             record = re.search(self.RECORD_RE, req.text)
             if len(record.groups()) > 4:
@@ -28,6 +29,10 @@ class FightersHandler (CSVHandler):
                 'draws': int(record.group(3)),
                 'nc': nc
             }
+        except:
+            print (f'FAILED: {url}')
+            return np.nan
+
     
     def _height_to_int (self, height: str) -> int:
         match = re.match(self.HEIGHT_RE, height)
@@ -51,6 +56,7 @@ class FightersHandler (CSVHandler):
         return int((datetime.now() - datetime.strptime(dob, '%b %d, %Y')).days / 365)
 
     def clean (self):
+        self.df.dropna(inplace=True)
         self.df.rename(columns={i: standardize_col(i) for i in self.df.columns}, inplace=True)
 
         self.df.height = self.df.height.map(self._height_to_int)
@@ -59,7 +65,9 @@ class FightersHandler (CSVHandler):
         self.df.stance = self.df.stance.map(lambda x: x.lower().replace(' ', '_'), na_action='ignore')
         self.df['age'] = self.df.dob.map(self._dob_to_age)
         self.df = pd.get_dummies(self.df, columns=['stance'])
-
+        
+        self.df.loc[self.df['fighter'] == 'Daniel Lacerda', 'url'] = 'http://www.ufcstats.com/fighter-details/31bb0772f21cabd8'
         self.df['record'] = self.df.url.map(self._get_fighter_records)
+        print (self.df[self.df['record'].isnull()].head())
         self.df[['wins', 'losses', 'wl_percentage', 'draws', 'nc']] = self.df.record.apply(pd.Series)
         self.df.drop(columns=['record'], inplace=True)

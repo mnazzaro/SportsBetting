@@ -7,7 +7,7 @@ import numpy as np
 from datetime import datetime
 
 from .get_prediction_data import make_matchup
-from .test_against_odds import compare_predictions_to_odds, clean_odds_data
+from .test_against_odds import compare_predictions_to_odds, clean_odds_data, compare_predictions_to_odds_groupby_date
 
 def train_xgb (train: pd.DataFrame, test: pd.DataFrame, matchup: pd.DataFrame):
 
@@ -111,5 +111,5 @@ def train_xgb (train: pd.DataFrame, test: pd.DataFrame, matchup: pd.DataFrame):
     test['prediction'] = (platt_calibrated_model.predict_proba(test[train_stat_cols])[:, 1] + \
           isotonic_calibrated_model.predict_proba(test[train_stat_cols])[:, 1]) / 2
     test['winner'] = model.predict(test[train_stat_cols])
-    compare_predictions_to_odds(test, clean_odds_data('moneyline_data_at_close.csv'), 
-                                2000, 0.1, 0.25)
+    compare_predictions_to_odds_groupby_date(test, clean_odds_data('moneyline_data_at_close.csv'), 
+                                2000, 0.03, 0.3)

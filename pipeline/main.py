@@ -22,7 +22,7 @@ if __name__=='__main__':
     fight_results_df = FightResultsHandler('../scrape_ufc_stats/ufc_fight_results.csv')()
 
     print(f"Starting FightersHandler at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
-    #fighters_df = FightersHandler('../scrape_ufc_stats/ufc_fighter_tott.csv')('fighters_df')
+    # fighters_df = FightersHandler('../scrape_ufc_stats/ufc_fighter_tott.csv')('fighters_df.csv')
     fighters_df = FightersHandler('fighters_df.csv', preload=True)()
 
     print(f"Starting FightStatsHandler at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
@@ -47,11 +47,11 @@ if __name__=='__main__':
     # all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
     #                                 #    load_train_fpath='train.csv', load_test_fpath='test.csv')
 
-    matchup = make_matchup(fighters_df, engineered_fight_level_stats, 'Jiri Prochazka', 'Alex Pereira', datetime(2023, 12, 3))
+    matchup = make_matchup(fighters_df, engineered_fight_level_stats, "Armen Petrosyan", 'Rodolfo Vieira',  datetime(2023, 11, 4))
     matchup.to_csv('matchup.csv')
     matchup = pd.read_csv('matchup.csv')
 
-    train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False)
+    train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False, test_size=0.25)
     print (train.head())
     print (list(set(train.columns) - set(matchup.columns)))
     # train, test = remove_wmma(train), remove_wmma(test)
