@@ -13,18 +13,26 @@ def _get_fighter_progression (group):
     m, _ = np.linalg.lstsq(A, y, rcond=None)[0]
     return m
 
-def _scramble_fighter_order (group):
-    print (group.index)
-    if random() > 0.5:
-        return group
-    red_cols = list(filter(lambda x: x.endswith('red'), group.index))
-    for col in red_cols:
-        temp = group[col].copy()
-        group[col] = group[col[:-4]+'_blue']
-        group[col[:-4]+'_blue'] = temp
-    group['outcome'] = 0 if group['outcome'] == 0 else 0
-    return group
+def get_k_factor (p1_games, p2_games):
+    min_games = min(p1_games, p2_games)
+    if min_games == 0:
+        return 100
+    if min_games > 15:
+        return 20
+    return 100 - ((20*min_games)**0.75)
 
+def update_elo(player1_rating, player2_rating, k_factor, result):
+
+    def expected_score(rating_a, rating_b):
+        return 1 / (1 + 10 ** ((rating_b - rating_a) / 400))
+
+    exp_score_p1 = expected_score(player1_rating, player2_rating)
+    exp_score_p2 = expected_score(player2_rating, player1_rating)
+
+    new_rating_p1 = player1_rating + k_factor * (result - exp_score_p1)
+    new_rating_p2 = player2_rating + k_factor * ((1 - result) - exp_score_p2)
+
+    return new_rating_p1, new_rating_p2
 
 def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, 
                           fight_results_df: pd.DataFrame, load_train_fpath: Optional[str]=None,
@@ -40,6 +48,7 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
                          - set(non_quant_stat_columns))
 
     failed_fights = []
+    fighter_elo_data = {}
     def _get_cum_fighter_stats (fighter: str, url: str, date: datetime, suffix: str) -> pd.DataFrame:
         name = pd.Series([fighter, url], ['fighter', 'url'])
         tott = fighters_df[fighters_df['url'] == url][['weight', 'height', 'reach', 'age', 'stance_open_stance', \
@@ -57,6 +66,7 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
         return pd.concat([name, tott, non_quant_stats, days_since_last_fight, mean, trend]).add_suffix(suffix)
 
     def _make_training_row (group: pd.DataFrame, failures: List[str]):
+        # TODO: Add ufc_fights_red/blue, elo_red/blue. Then, we can calculate current elo in get_prediction_data
         try:
             f1 = _get_cum_fighter_stats(group.iloc[0]['fighter'], group.iloc[0]['url'], group.iloc[0]['date'], '_red')
             f2 = _get_cum_fighter_stats(group.iloc[1]['fighter'], group.iloc[1]['url'], group.iloc[1]['date'], '_blue')
@@ -83,11 +93,42 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
     # ones_proportion = len(all[all['outcome'] == 1].index) / len(all.index)
     # size = int((ones_proportion - 0.5) * len(all[all['outcome'] == 1].index))
     # random_indices = np.random.choice(all[all['outcome'] == 1].index, size=size, replace=False)
+
+    fighter_elo_data = {}
+    elo_red = []
+    elo_blue = []
+    for _, row in all.iterrows():
+        url_red = row['url_red']
+        url_blue = row['url_blue']
+        if url_red in fighter_elo_data:
+            elo1 = fighter_elo_data[url_red][0]
+            games1 = fighter_elo_data[url_red][1]
+        else:
+            elo1 = 1000
+            games1 = 0
+        if url_blue in fighter_elo_data:
+            elo2 = fighter_elo_data[url_blue][0]
+            games2 = fighter_elo_data[url_blue][1]
+        else:
+            elo2 = 1000
+            games2 = 0
+        elo_red.append(elo1)
+        elo_blue.append(elo2)
+
+        k = get_k_factor(games1, games2)
+        elo1, elo2 = update_elo(elo1, elo2, k, row['outcome'])
+        fighter_elo_data[url_red] = (elo1, games1 + 1)
+        fighter_elo_data[url_blue] = (elo2, games2 + 1)
+
+    all['elo_red'] = elo_red
+    all['elo_blue'] = elo_blue
+
     reds = list(filter(lambda x: x.endswith('red'), all.columns))
     blues = list(map(lambda x: x[:-4] + '_blue', reds))
     for col in reds:
         if col != 'fighter_red':
             all[col[:-4] + '_direct_difference'] = all[col] - all[col[:-4]+'_blue']
+            
     # all.loc[random_indices, reds], all.loc[random_indices, blues] = all.loc[random_indices, blues].values, all.loc[random_indices, reds].values
     # all.loc[random_indices, 'outcome'] = all.loc[random_indices].outcome.map(lambda x: 0 if x == 1 else 1)
     swapped: pd.DataFrame = all.copy()

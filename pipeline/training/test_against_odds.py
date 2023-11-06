@@ -12,7 +12,7 @@ def clean_odds_data (fpath: str):
     #                                 'SportsInt', 'BetOnline', 'Intertops']].mean(axis=1)
     return odds_df.copy()
 
-def _get_implied_odds (american_odds: int) -> float:
+def get_implied_odds (american_odds: int) -> float:
     if american_odds < 0:
         return -(american_odds / (100 - american_odds))
     return 100 / (100 + american_odds)
@@ -71,12 +71,12 @@ def compare_predictions_to_odds_groupby_date (test_data: pd.DataFrame, odds_data
                         (odds_data['fighter2'] == row['fighter_blue']) & 
                         (odds_data['Card_Date'] == row['date'])]
                 if row['fighter_red'] == odds.iloc[0]['Bet']:
-                    if row['prediction'] - _get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
-                        bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, _get_implied_odds (odds.iloc[0]['mean_odds']), row['prediction'])
+                    if row['prediction'] - get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
+                        bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, get_implied_odds (odds.iloc[0]['mean_odds']), row['prediction'])
                         if row['outcome'] == 1:
                             print (f"WON ${bet_size} BET ON {row['fighter_red']}")
                             wins += 1
-                            gains.append(((1 / _get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size)
+                            gains.append(((1 / get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size)
                         else:
                             print (f"LOST ${bet_size} BET ON {row['fighter_red']}")
                             losses += 1
@@ -84,12 +84,12 @@ def compare_predictions_to_odds_groupby_date (test_data: pd.DataFrame, odds_data
                     else:
                         not_placed += 1
                         print (f"NOT BETTING ON {row['fighter_red']}")
-                        if (1 - row['prediction']) - _get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
-                            bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, _get_implied_odds (odds.iloc[1]['mean_odds']), 1 - row['prediction'])
+                        if (1 - row['prediction']) - get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
+                            bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, get_implied_odds (odds.iloc[1]['mean_odds']), 1 - row['prediction'])
                             if row['outcome'] == 0:
                                 print (f"WON ${bet_size} BET ON {row['fighter_blue']}")
                                 wins += 1
-                                gains.append(((1 / _get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size)
+                                gains.append(((1 / get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size)
                             else:
                                 print (f"LOST ${bet_size} BET ON {row['fighter_blue']}")
                                 losses += 1
@@ -98,12 +98,12 @@ def compare_predictions_to_odds_groupby_date (test_data: pd.DataFrame, odds_data
                             not_placed += 1
                             print (f"NOT BETTING ON {row['fighter_blue']}")
                 else:
-                    if (1 - row['prediction']) - _get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
-                        bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, _get_implied_odds (odds.iloc[0]['mean_odds']), 1 - row['prediction'])
+                    if (1 - row['prediction']) - get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
+                        bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, get_implied_odds (odds.iloc[0]['mean_odds']), 1 - row['prediction'])
                         if row['outcome'] == 0:
                             print (f"WON ${bet_size} BET ON {row['fighter_blue']}")
                             wins += 1
-                            gains.append(((1 / _get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size)
+                            gains.append(((1 / get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size)
                         else:
                             print (f"LOST ${bet_size} BET ON {row['fighter_blue']}")
                             losses += 1
@@ -111,12 +111,12 @@ def compare_predictions_to_odds_groupby_date (test_data: pd.DataFrame, odds_data
                     else:
                         print (f"NOT BETTING ON {row['fighter_blue']}")
                         not_placed += 1
-                        if row['prediction'] - _get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
-                            bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, _get_implied_odds (odds.iloc[1]['mean_odds']), row['prediction'])
+                        if row['prediction'] - get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
+                            bet_size = make_kelly_bet(cur_bankroll, kelly_fraction, get_implied_odds (odds.iloc[1]['mean_odds']), row['prediction'])
                             if row['outcome'] == 1:
                                 print (f"WON ${bet_size} BET ON {row['fighter_red']}")
                                 wins += 1
-                                gains.append(((1 / _get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size)
+                                gains.append(((1 / get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size)
                             else:
                                 print (f"LOST ${bet_size} BET ON {row['fighter_red']}")
                                 losses += 1
@@ -149,8 +149,8 @@ def compare_predictions_to_odds_groupby_date (test_data: pd.DataFrame, odds_data
     print ("STANDARD DEVIATION: {:.2f}%".format(calculate_event_return_stdv(bankrolls)*100))
     print (f"SHARPE RATIO: {calculate_sharpe_ratio(bankrolls)}")
 
-    plt.plot(dates, bankrolls)
-    plt.show()
+    # plt.plot(dates, bankrolls)
+    # plt.show()
 
 def compare_predictions_to_odds (test_data: pd.DataFrame, odds_data: pd.DataFrame, 
                                  initial_bankroll: float, kelly_threshold: float,
@@ -164,22 +164,22 @@ def compare_predictions_to_odds (test_data: pd.DataFrame, odds_data: pd.DataFram
                      (odds_data['fighter2'] == row['fighter_blue']) & 
                      (odds_data['Card_Date'] == row['date'])]
             if row['fighter_red'] == odds.iloc[0]['Bet']:
-                if row['prediction'] - _get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
-                    bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, _get_implied_odds (odds.iloc[0]['mean_odds']), row['prediction'])
+                if row['prediction'] - get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
+                    bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, get_implied_odds (odds.iloc[0]['mean_odds']), row['prediction'])
                     if row['outcome'] == 1:
                         print (f"WON ${bet_size} BET ON {row['fighter_red']}")
-                        bankrolls.append(bankrolls[-1] + (((1 / _get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size))
+                        bankrolls.append(bankrolls[-1] + (((1 / get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size))
                     else:
                         print (f"LOST ${bet_size} BET ON {row['fighter_red']}")
                         bankrolls.append(bankrolls[-1] - bet_size)
                     dates.append(row['date'])
                 else:
                     print (f"NOT BETTING ON {row['fighter_red']}")
-                    if (1 - row['prediction']) - _get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
-                        bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, _get_implied_odds (odds.iloc[1]['mean_odds']), 1 - row['prediction'])
+                    if (1 - row['prediction']) - get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
+                        bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, get_implied_odds (odds.iloc[1]['mean_odds']), 1 - row['prediction'])
                         if row['outcome'] == 0:
                             print (f"WON ${bet_size} BET ON {row['fighter_blue']}")
-                            bankrolls.append(bankrolls[-1] + (((1 / _get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size))
+                            bankrolls.append(bankrolls[-1] + (((1 / get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size))
                         else:
                             print (f"LOST ${bet_size} BET ON {row['fighter_blue']}")
                             bankrolls.append(bankrolls[-1] - bet_size)
@@ -187,22 +187,22 @@ def compare_predictions_to_odds (test_data: pd.DataFrame, odds_data: pd.DataFram
                     else:
                         print (f"NOT BETTING ON {row['fighter_blue']}")
             else:
-                if (1 - row['prediction']) - _get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
-                    bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, _get_implied_odds (odds.iloc[0]['mean_odds']), 1 - row['prediction'])
+                if (1 - row['prediction']) - get_implied_odds (odds.iloc[0]['mean_odds']) >= kelly_threshold:
+                    bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, get_implied_odds (odds.iloc[0]['mean_odds']), 1 - row['prediction'])
                     if row['outcome'] == 0:
                         print (f"WON ${bet_size} BET ON {row['fighter_blue']}")
-                        bankrolls.append(bankrolls[-1] + (((1 / _get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size))
+                        bankrolls.append(bankrolls[-1] + (((1 / get_implied_odds(odds.iloc[0]['mean_odds'])) - 1) * bet_size))
                     else:
                         print (f"LOST ${bet_size} BET ON {row['fighter_blue']}")
                         bankrolls.append(bankrolls[-1] - bet_size)
                     dates.append(row['date'])
                 else:
                     print (f"NOT BETTING ON {row['fighter_blue']}")
-                    if row['prediction'] - _get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
-                        bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, _get_implied_odds (odds.iloc[1]['mean_odds']), row['prediction'])
+                    if row['prediction'] - get_implied_odds (odds.iloc[1]['mean_odds']) >= kelly_threshold:
+                        bet_size = make_kelly_bet(bankrolls[-1], kelly_fraction, get_implied_odds (odds.iloc[1]['mean_odds']), row['prediction'])
                         if row['outcome'] == 1:
                             print (f"WON ${bet_size} BET ON {row['fighter_red']}")
-                            bankrolls.append(bankrolls[-1] + (((1 / _get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size))
+                            bankrolls.append(bankrolls[-1] + (((1 / get_implied_odds(odds.iloc[1]['mean_odds'])) - 1) * bet_size))
                         else:
                             print (f"LOST ${bet_size} BET ON {row['fighter_red']}")
                             bankrolls.append(bankrolls[-1] - bet_size)
