@@ -75,21 +75,39 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
             result = fight_results_df[(fight_results_df['event'] == group.name[0]) & (fight_results_df['bout'] == group.name[1])].iloc[0]
             if result['fighter'] == group.iloc[0]['fighter']:
                 if result.loc['outcome'] == 'W':
-                    o = 1
                     outcome = pd.Series([1], index=['outcome'])
                 else:
-                    o = 0
                     outcome = pd.Series([0], index=['outcome'])
             else:
                 if result.loc['outcome'] == 'W':
-                    o = 0
                     outcome = pd.Series([0], index=['outcome'])
                 else:
-                    o = 1
                     outcome = pd.Series([1], index=['outcome'])
             date = pd.Series([group.iloc[0]['date']], ['date'])
             
-            # DO ELO CALCULATIONS
+            
+            return pd.DataFrame(pd.concat([f1, f2, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
+        except Exception as e:
+            print (f'{group.name}  ERROR: {e}')
+            failures.append(group.name)
+            return None
+
+    all: pd.DataFrame = fighter_cumulative_df.groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
+            .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights)).sort_values(by='date')
+    # ones_proportion = len(all[all['outcome'] == 1].index) / len(all.index)
+    # size = int((ones_proportion - 0.5) * len(all[all['outcome'] == 1].index))
+    # random_indices = np.random.choice(all[all['outcome'] == 1].index, size=size, replace=False)
+
+    fighter_elo_data = {}
+    elo_red = []
+    games_red = []
+    elo_blue = []
+    games_blue = []
+    for index, row in all.iterrows():
+        # try:
+            url_red = index[2]
+            print (url_red)
+            url_blue = index[3]
             if url_red in fighter_elo_data:
                 elo1 = fighter_elo_data[url_red][0]
                 games1 = fighter_elo_data[url_red][1]
@@ -102,55 +120,27 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
             else:
                 elo2 = 1000
                 games2 = 0
-
-            elo_red = pd.Series([elo1, games1], ['elo_red', 'bouts_red'])
-            elo_blue = pd.Series([elo2, games2], ['elo_blue', 'bouts_blue'])
+            elo_red.append(elo1)
+            elo_blue.append(elo2)
+            games_red.append(games1)
+            games_blue.append(games2)
 
             k = get_k_factor(games1, games2)
-            elo1, elo2 = update_elo(elo1, elo2, k, o)
+            elo1, elo2 = update_elo(elo1, elo2, k, row['outcome'])
             fighter_elo_data[url_red] = (elo1, games1 + 1)
             fighter_elo_data[url_blue] = (elo2, games2 + 1)
+        # except Exception as e:
+        #     print (e)
+        #     elo_red.append(np.nan)
+        #     elo_blue.append(np.nan)
+        #     games_red.append(np.nan)
+        #     games_blue.append(np.nan)
 
-            return pd.DataFrame(pd.concat([f1, elo_red, f2, elo_blue, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
-        except Exception as e:
-            print (f'{group.name}  ERROR: {e}')
-            failures.append(group.name)
-            return None
 
-    all = fighter_cumulative_df.groupby(['event', 'bout']).filter(lambda x: len(x.index) == 2) \
-            .groupby(['event', 'bout']).apply(lambda x: _make_training_row(x, failed_fights)).sort_values(by='date')
-    # ones_proportion = len(all[all['outcome'] == 1].index) / len(all.index)
-    # size = int((ones_proportion - 0.5) * len(all[all['outcome'] == 1].index))
-    # random_indices = np.random.choice(all[all['outcome'] == 1].index, size=size, replace=False)
-
-    # fighter_elo_data = {}
-    # elo_red = []
-    # elo_blue = []
-    # for _, row in all.iterrows():
-    #     url_red = row['url_red']
-    #     url_blue = row['url_blue']
-    #     if url_red in fighter_elo_data:
-    #         elo1 = fighter_elo_data[url_red][0]
-    #         games1 = fighter_elo_data[url_red][1]
-    #     else:
-    #         elo1 = 1000
-    #         games1 = 0
-    #     if url_blue in fighter_elo_data:
-    #         elo2 = fighter_elo_data[url_blue][0]
-    #         games2 = fighter_elo_data[url_blue][1]
-    #     else:
-    #         elo2 = 1000
-    #         games2 = 0
-    #     elo_red.append(elo1)
-    #     elo_blue.append(elo2)
-
-    #     k = get_k_factor(games1, games2)
-    #     elo1, elo2 = update_elo(elo1, elo2, k, row['outcome'])
-    #     fighter_elo_data[url_red] = (elo1, games1 + 1)
-    #     fighter_elo_data[url_blue] = (elo2, games2 + 1)
-
-    # all['elo_red'] = elo_red
-    # all['elo_blue'] = elo_blue
+    all['elo_red'] = elo_red
+    all['bouts_red'] = games_red
+    all['elo_blue'] = elo_blue
+    all['bouts_blue'] = games_blue
 
     reds = list(filter(lambda x: x.endswith('red'), all.columns))
     blues = list(map(lambda x: x[:-4] + '_blue', reds))

@@ -80,23 +80,25 @@ def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, al
         latest_fight_blue = all_data[all_data['fighter_red'] == group.iloc[1]['fighter']]
         latest_fight_blue = latest_fight_blue.loc[latest_fight_blue['date'] == latest_fight_blue['date'].max()].iloc[0]
         k = get_k_factor(latest_fight_red['bouts_red'], latest_fight_red['bouts_blue'])
-        elo1, _ = update_elo(latest_fight_red['elo_red'], latest_fight_red['elo_blue'], k, latest_fight_red['outcome'])
-        elo_red = pd.Series([elo1, latest_fight_red['bouts_red'] + 1], ['elo_red', 'bouts_red'])
+        elo1_red, _ = update_elo(latest_fight_red['elo_red'], latest_fight_red['elo_blue'], k, latest_fight_red['outcome'])
+        bouts_red = latest_fight_red['bouts_red'] + 1
+        elo_red = pd.Series([elo1_red, bouts_red], ['elo_red', 'bouts_red'])
 
         k = get_k_factor(latest_fight_blue['bouts_red'], latest_fight_blue['bouts_blue'])
-        elo1, _ = update_elo(latest_fight_blue['elo_red'], latest_fight_blue['elo_blue'], k, latest_fight_blue['outcome'])
-        elo_blue = pd.Series([elo1, latest_fight_blue['bouts_red'] + 1], ['elo_blue', 'bouts_blue'])
+        elo1_blue, _ = update_elo(latest_fight_blue['elo_red'], latest_fight_blue['elo_blue'], k, latest_fight_blue['outcome'])
+        bouts_blue = latest_fight_blue['bouts_red'] + 1
+        elo_blue = pd.Series([elo1_blue, bouts_blue], ['elo_blue', 'bouts_blue'])
 
-        f1 = pd.concat([f1, elo_red])
-        f2 = pd.concat([f2, elo_blue])
+        elo_direct_diffs = pd.Series([elo1_red - elo1_blue, bouts_red - bouts_blue], ['elo_direct_difference', 'bouts_direct_difference'])
+        # f1 = pd.concat([f1, elo_red])
+        # f2 = pd.concat([f2, elo_blue])
         stat_cols = list(set(list(f1.index)) - set(['fighter_red', 'url_red']))
         blue_stat_cols = list(map(lambda x: (x[:-4] + '_blue'), stat_cols))
         print (f'{f1["fighter_red"]}: {len(f1.index)}')
         print (f'{f2["fighter_blue"]}: {len(f2.index)}')
         direct_diffs_index = list(map(lambda x: x[:-4] + '_direct_difference', stat_cols))
         direct_diffs = pd.Series(f1[stat_cols].values - f2[blue_stat_cols].values, direct_diffs_index)
-        ret = pd.DataFrame(pd.concat([f1, f2, direct_diffs, date])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
-        print (f'elo_red: {ret["elo_red"]}, elo_blue: {ret["elo_blue"]}, difference: {ret["elo_direct_difference"]}')
+        ret = pd.DataFrame(pd.concat([f1, f2, date, elo_red, elo_blue, direct_diffs, elo_direct_diffs])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         return ret
     # except Exception as e:
     #     print (str(e))
