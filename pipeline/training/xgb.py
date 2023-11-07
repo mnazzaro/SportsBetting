@@ -18,6 +18,8 @@ def train_xgb (train: pd.DataFrame, test: pd.DataFrame):
     # train = train.drop(train[to_drop], axis=1)
     # test = test.drop(test[to_drop], axis=1)
     # print (to_drop)
+    # train = train.drop(columns=['wl_percentage_direct_difference'])
+    # test = test.drop(columns=['wl_percentage_direct_difference'])
     decisions = set(['ko_tko', 'unanimous_decision', 'split_decision', 'submission', 'dr_stoppage', 'other'])
     train_stat_cols = list(set(train.columns) - set(['event', 'date', 'bout', 'outcome', 'fighter_red', 'fighter_blue', 'url_red', 'url_blue']) -
                            decisions - set(map(lambda x: x + '_direct_difference', decisions)))
@@ -49,16 +51,16 @@ def train_xgb (train: pd.DataFrame, test: pd.DataFrame):
 
     y_pred = model.predict(test[train_stat_cols])
     accuracy = accuracy_score(test['outcome'], y_pred)
-    # print(f'Model Accuracy: {accuracy}')
+    print(f'Model Accuracy: {accuracy}')
     
 
-    # feature_important = model.get_booster().get_score(importance_type='weight')
-    # keys = list(feature_important.keys())
-    # values = list(feature_important.values())
+    feature_important = model.get_booster().get_score(importance_type='weight')
+    keys = list(feature_important.keys())
+    values = list(feature_important.values())
 
-    # data = pd.DataFrame(data=values, index=keys, columns=["score"]).sort_values(by = "score", ascending=False)
-    # data.nlargest(50, columns="score").plot(kind='barh', figsize = (20,10)) ## plot top 40 features
-    # plt.show()
+    data = pd.DataFrame(data=values, index=keys, columns=["score"]).sort_values(by = "score", ascending=False)
+    data.nlargest(50, columns="score").plot(kind='barh', figsize = (20,10)) ## plot top 40 features
+    plt.show()
 
     # print (len(train.index))
     # print(len(test.index))
@@ -111,8 +113,8 @@ def train_xgb (train: pd.DataFrame, test: pd.DataFrame):
 
     test['winner'] = test['prediction'].map(lambda x: int(round(x)))
     # test['winner'] = model.predict(test[train_stat_cols])
-    # compare_predictions_to_odds_groupby_date(test, clean_odds_data('moneyline_data_at_close.csv'), 
-    #                             2000, 0.03, 0.3)
+    compare_predictions_to_odds_groupby_date(test, clean_odds_data('moneyline_data_at_close.csv'), 
+                                2000, 0.03, 0.3)
 
     return train_stat_cols, platt_calibrated_model
 

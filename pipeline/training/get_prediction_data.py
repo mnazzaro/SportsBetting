@@ -11,6 +11,27 @@ def _get_fighter_progression (group):
     m, _ = np.linalg.lstsq(A, y, rcond=None)[0]
     return m
 
+def update_elo(player1_rating, player2_rating, k_factor, result):
+
+    def expected_score(rating_a, rating_b):
+        return 1 / (1 + 10 ** ((rating_b - rating_a) / 400))
+
+    exp_score_p1 = expected_score(player1_rating, player2_rating)
+    exp_score_p2 = expected_score(player2_rating, player1_rating)
+
+    new_rating_p1 = player1_rating + k_factor * (result - exp_score_p1)
+    new_rating_p2 = player2_rating + k_factor * ((1 - result) - exp_score_p2)
+
+    return new_rating_p1, new_rating_p2
+
+def get_k_factor (p1_games, p2_games):
+    min_games = min(p1_games, p2_games)
+    if min_games == 0:
+        return 100
+    if min_games > 15:
+        return 20
+    return 100 - ((20*min_games)**0.75)
+
 
 def get_cum_fighter_stats (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, fighter: str, url: str, date: datetime, suffix: str) -> pd.Series:
     fighter_cumulative_df = fight_stats_df.sort_values(by='date', ascending=True)
@@ -44,13 +65,30 @@ def get_cum_fighter_stats (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFra
         days_since_last_fight = pd.Series([np.nan], ['days_since_last_fight'])
     return pd.concat([name, tott, non_quant_stats, days_since_last_fight, mean, trend]).add_suffix(suffix)
 
-def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, group: pd.DataFrame, fight_date: datetime):
+def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, all_data: pd.DataFrame, group: pd.DataFrame, fight_date: datetime):
     # try:
+        url_red = group.iloc[0]['url']
+        url_blue = group.iloc[1]['url']
         f1 = get_cum_fighter_stats(fighters_df, fight_stats_df,
-            group.iloc[0]['fighter'], group.iloc[0]['url'], fight_date, '_red')
+            group.iloc[0]['fighter'], url_red, fight_date, '_red')
         f2 = get_cum_fighter_stats(fighters_df, fight_stats_df,
-            group.iloc[1]['fighter'], group.iloc[1]['url'], fight_date, '_blue')
+            group.iloc[1]['fighter'], url_blue, fight_date, '_blue')
         date = pd.Series([fight_date], ['date'])
+
+        latest_fight_red = all_data[all_data['fighter_red'] == group.iloc[0]['fighter']]
+        latest_fight_red = latest_fight_red.loc[latest_fight_red['date'] == latest_fight_red['date'].max()].iloc[0]
+        latest_fight_blue = all_data[all_data['fighter_red'] == group.iloc[1]['fighter']]
+        latest_fight_blue = latest_fight_blue.loc[latest_fight_blue['date'] == latest_fight_blue['date'].max()].iloc[0]
+        k = get_k_factor(latest_fight_red['bouts_red'], latest_fight_red['bouts_blue'])
+        elo1, _ = update_elo(latest_fight_red['elo_red'], latest_fight_red['elo_blue'], k, latest_fight_red['outcome'])
+        elo_red = pd.Series([elo1, latest_fight_red['bouts_red'] + 1], ['elo_red', 'bouts_red'])
+
+        k = get_k_factor(latest_fight_blue['bouts_red'], latest_fight_blue['bouts_blue'])
+        elo1, _ = update_elo(latest_fight_blue['elo_red'], latest_fight_blue['elo_blue'], k, latest_fight_blue['outcome'])
+        elo_blue = pd.Series([elo1, latest_fight_blue['bouts_red'] + 1], ['elo_blue', 'bouts_blue'])
+
+        f1 = pd.concat([f1, elo_red])
+        f2 = pd.concat([f2, elo_blue])
         stat_cols = list(set(list(f1.index)) - set(['fighter_red', 'url_red']))
         blue_stat_cols = list(map(lambda x: (x[:-4] + '_blue'), stat_cols))
         print (f'{f1["fighter_red"]}: {len(f1.index)}')
@@ -58,6 +96,7 @@ def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, gr
         direct_diffs_index = list(map(lambda x: x[:-4] + '_direct_difference', stat_cols))
         direct_diffs = pd.Series(f1[stat_cols].values - f2[blue_stat_cols].values, direct_diffs_index)
         ret = pd.DataFrame(pd.concat([f1, f2, direct_diffs, date])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
+        print (f'elo_red: {ret["elo_red"]}, elo_blue: {ret["elo_blue"]}, difference: {ret["elo_direct_difference"]}')
         return ret
     # except Exception as e:
     #     print (str(e))
@@ -71,4 +110,5 @@ def make_matchup (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, fight
         )),
         columns=['fighter', 'url']
     )
-    return make_matchup_df(fighters_df, fight_stats_df, group, fight_date)
+    all_data = pd.read_csv('all_training_data.csv')
+    return make_matchup_df(fighters_df, fight_stats_df, all_data, group, fight_date)

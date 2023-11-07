@@ -149,8 +149,8 @@ def compare_predictions_to_odds_groupby_date (test_data: pd.DataFrame, odds_data
     print ("STANDARD DEVIATION: {:.2f}%".format(calculate_event_return_stdv(bankrolls)*100))
     print (f"SHARPE RATIO: {calculate_sharpe_ratio(bankrolls)}")
 
-    # plt.plot(dates, bankrolls)
-    # plt.show()
+    plt.plot(dates, bankrolls)
+    plt.show()
 
 def compare_predictions_to_odds (test_data: pd.DataFrame, odds_data: pd.DataFrame, 
                                  initial_bankroll: float, kelly_threshold: float,

@@ -68,21 +68,50 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
     def _make_training_row (group: pd.DataFrame, failures: List[str]):
         # TODO: Add ufc_fights_red/blue, elo_red/blue. Then, we can calculate current elo in get_prediction_data
         try:
-            f1 = _get_cum_fighter_stats(group.iloc[0]['fighter'], group.iloc[0]['url'], group.iloc[0]['date'], '_red')
-            f2 = _get_cum_fighter_stats(group.iloc[1]['fighter'], group.iloc[1]['url'], group.iloc[1]['date'], '_blue')
+            url_red = group.iloc[0]['url']
+            url_blue = group.iloc[1]['url']
+            f1 = _get_cum_fighter_stats(group.iloc[0]['fighter'], url_red, group.iloc[0]['date'], '_red')
+            f2 = _get_cum_fighter_stats(group.iloc[1]['fighter'], url_blue, group.iloc[1]['date'], '_blue')
             result = fight_results_df[(fight_results_df['event'] == group.name[0]) & (fight_results_df['bout'] == group.name[1])].iloc[0]
             if result['fighter'] == group.iloc[0]['fighter']:
                 if result.loc['outcome'] == 'W':
+                    o = 1
                     outcome = pd.Series([1], index=['outcome'])
                 else:
+                    o = 0
                     outcome = pd.Series([0], index=['outcome'])
             else:
                 if result.loc['outcome'] == 'W':
+                    o = 0
                     outcome = pd.Series([0], index=['outcome'])
                 else:
+                    o = 1
                     outcome = pd.Series([1], index=['outcome'])
             date = pd.Series([group.iloc[0]['date']], ['date'])
-            return pd.DataFrame(pd.concat([f1, f2, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
+            
+            # DO ELO CALCULATIONS
+            if url_red in fighter_elo_data:
+                elo1 = fighter_elo_data[url_red][0]
+                games1 = fighter_elo_data[url_red][1]
+            else:
+                elo1 = 1000
+                games1 = 0
+            if url_blue in fighter_elo_data:
+                elo2 = fighter_elo_data[url_blue][0]
+                games2 = fighter_elo_data[url_blue][1]
+            else:
+                elo2 = 1000
+                games2 = 0
+
+            elo_red = pd.Series([elo1, games1], ['elo_red', 'bouts_red'])
+            elo_blue = pd.Series([elo2, games2], ['elo_blue', 'bouts_blue'])
+
+            k = get_k_factor(games1, games2)
+            elo1, elo2 = update_elo(elo1, elo2, k, o)
+            fighter_elo_data[url_red] = (elo1, games1 + 1)
+            fighter_elo_data[url_blue] = (elo2, games2 + 1)
+
+            return pd.DataFrame(pd.concat([f1, elo_red, f2, elo_blue, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         except Exception as e:
             print (f'{group.name}  ERROR: {e}')
             failures.append(group.name)
@@ -94,34 +123,34 @@ def make_train_test_sets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFram
     # size = int((ones_proportion - 0.5) * len(all[all['outcome'] == 1].index))
     # random_indices = np.random.choice(all[all['outcome'] == 1].index, size=size, replace=False)
 
-    fighter_elo_data = {}
-    elo_red = []
-    elo_blue = []
-    for _, row in all.iterrows():
-        url_red = row['url_red']
-        url_blue = row['url_blue']
-        if url_red in fighter_elo_data:
-            elo1 = fighter_elo_data[url_red][0]
-            games1 = fighter_elo_data[url_red][1]
-        else:
-            elo1 = 1000
-            games1 = 0
-        if url_blue in fighter_elo_data:
-            elo2 = fighter_elo_data[url_blue][0]
-            games2 = fighter_elo_data[url_blue][1]
-        else:
-            elo2 = 1000
-            games2 = 0
-        elo_red.append(elo1)
-        elo_blue.append(elo2)
+    # fighter_elo_data = {}
+    # elo_red = []
+    # elo_blue = []
+    # for _, row in all.iterrows():
+    #     url_red = row['url_red']
+    #     url_blue = row['url_blue']
+    #     if url_red in fighter_elo_data:
+    #         elo1 = fighter_elo_data[url_red][0]
+    #         games1 = fighter_elo_data[url_red][1]
+    #     else:
+    #         elo1 = 1000
+    #         games1 = 0
+    #     if url_blue in fighter_elo_data:
+    #         elo2 = fighter_elo_data[url_blue][0]
+    #         games2 = fighter_elo_data[url_blue][1]
+    #     else:
+    #         elo2 = 1000
+    #         games2 = 0
+    #     elo_red.append(elo1)
+    #     elo_blue.append(elo2)
 
-        k = get_k_factor(games1, games2)
-        elo1, elo2 = update_elo(elo1, elo2, k, row['outcome'])
-        fighter_elo_data[url_red] = (elo1, games1 + 1)
-        fighter_elo_data[url_blue] = (elo2, games2 + 1)
+    #     k = get_k_factor(games1, games2)
+    #     elo1, elo2 = update_elo(elo1, elo2, k, row['outcome'])
+    #     fighter_elo_data[url_red] = (elo1, games1 + 1)
+    #     fighter_elo_data[url_blue] = (elo2, games2 + 1)
 
-    all['elo_red'] = elo_red
-    all['elo_blue'] = elo_blue
+    # all['elo_red'] = elo_red
+    # all['elo_blue'] = elo_blue
 
     reds = list(filter(lambda x: x.endswith('red'), all.columns))
     blues = list(map(lambda x: x[:-4] + '_blue', reds))

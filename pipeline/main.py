@@ -47,17 +47,17 @@ if __name__=='__main__':
     
     # engineered_fight_level_stats.to_csv('engineered_fight_level_stats.csv') # TODO: these types of big dataframe editing functions should write themselves to file
 
-    all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
+    # all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
     #                                 #    load_train_fpath='train.csv', load_test_fpath='test.csv')
 
     train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False, test_size=0.25)
     # # train, test = remove_wmma(train), remove_wmma(test)
 
     # all = pd.read_csv('all_training_data.csv')
-    # cols, model = train_xgb(train, test)
+    cols, model = train_xgb(train, test)
 
-    all = pd.read_csv('all_training_data.csv')
-    cols, model = train_xgb_all(all)
+    # all = pd.read_csv('all_training_data.csv')
+    # cols, model = train_xgb_all(all)
 
     # odds = []
     # for i in range(40):
