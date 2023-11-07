@@ -50,14 +50,14 @@ if __name__=='__main__':
     # all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
     #                                 #    load_train_fpath='train.csv', load_test_fpath='test.csv')
 
-    train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False, test_size=0.25)
+    # train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False, test_size=0.25)
     # # train, test = remove_wmma(train), remove_wmma(test)
 
     # all = pd.read_csv('all_training_data.csv')
-    cols, model = train_xgb(train, test)
+    # cols, model = train_xgb(train, test)
 
-    # all = pd.read_csv('all_training_data.csv')
-    # cols, model = train_xgb_all(all)
+    all = pd.read_csv('all_training_data.csv')
+    cols, model = train_xgb_all(all)
 
     # odds = []
     # for i in range(40):
@@ -99,14 +99,23 @@ if __name__=='__main__':
                   ('Tom Aspinall', "Sergei Pavlovich"),
                   ('Jessica Andrade', 'Mackenzie Dern'),
                   ('Matt Frevola', 'Benoit Saint Denis'),
-                  ('Diego Lopes', 'Pat Sabatini')
+                  ('Diego Lopes', 'Pat Sabatini'),
+                  ('Tabatha Ricci', 'Loopy Godinez'),
+                  ('Jared Gordon', 'Mark Madsen'),
+                  ('John Castaneda', 'Kyung Ho Kang'),
+                  ('Dennis Buzukja', 'Jamall Emmers')
               ],
               [
                   (125, -150), 
                   (-110, -110),
                   (165, -200),
                   (170, -210),
-                  (115, -140)
-              ], model, cols, 0.03, 0.2, 1120)
+                  (115, -140),
+                  (135, -165),
+                  (-200, 165),
+                  (-150, 125),
+                  (220, -275)
+
+              ], model, cols, 0.03, 0.2, 1007)
 
     print("FINISHED")

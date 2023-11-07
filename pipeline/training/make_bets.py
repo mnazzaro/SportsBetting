@@ -40,9 +40,11 @@ def make_bets (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, date: da
         imp_odd_r_str = "{:.2f}".format(red_implied_odds * 100)
         imp_odd_b_str = "{:.2f}".format(blue_implied_odds * 100)
         if fighter_red_prob - red_implied_odds >= kelly_threshold:
-            print (f"""BET {make_kelly_bet(bankroll, kelly_fraction, red_implied_odds, fighter_red_prob)} on {row['fighter_red']} with {prob_r_str}% chance against {imp_odd_r_str}% implied odds""")
+            bet_size = make_kelly_bet(bankroll, kelly_fraction, red_implied_odds, fighter_red_prob)
+            print (f"""BET {bet_size} on {row['fighter_red']} with {prob_r_str}% chance against {imp_odd_r_str}% implied odds to win {bet_size / red_implied_odds}""")
         elif fighter_blue_prob - blue_implied_odds >= kelly_threshold:
-            print (f"""BET {make_kelly_bet(bankroll, kelly_fraction, blue_implied_odds, fighter_blue_prob)} on {row['fighter_blue']} with {prob_b_str}% chance against {imp_odd_b_str}% implied odds""")
+            bet_size = make_kelly_bet(bankroll, kelly_fraction, blue_implied_odds, fighter_blue_prob)
+            print (f"""BET {bet_size} on {row['fighter_blue']} with {prob_b_str}% chance against {imp_odd_b_str}% implied odds to win {bet_size / blue_implied_odds}""")
         else:
             print (f"""DO NOT BET ON {row['fighter_red']} vs. {row['fighter_blue']}\n    -{row['fighter_red']} has {prob_r_str}% chance against {imp_odd_r_str}% implied odds\n    -{row['fighter_blue']} has {prob_b_str}% chance against {imp_odd_b_str}% implied odds""")
             
