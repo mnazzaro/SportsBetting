@@ -48,16 +48,18 @@ if __name__=='__main__':
     # engineered_fight_level_stats.to_csv('engineered_fight_level_stats.csv') # TODO: these types of big dataframe editing functions should write themselves to file
 
     # all_data = make_train_test_sets(fighters_df, engineered_fight_level_stats, fight_results_df)
-    #                                 #    load_train_fpath='train.csv', load_test_fpath='test.csv')
+                                    #    load_train_fpath='train.csv', load_test_fpath='test.csv')
 
     # train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False, test_size=0.25)
-    # # train, test = remove_wmma(train), remove_wmma(test)
+    # train, test = remove_wmma(train), remove_wmma(test)
 
     # all = pd.read_csv('all_training_data.csv')
     # cols, model = train_xgb(train, test)
 
     all = pd.read_csv('all_training_data.csv')
     cols, model = train_xgb_all(all)
+
+    print ('testing time')
 
     # odds = []
     # for i in range(40):
@@ -106,16 +108,16 @@ if __name__=='__main__':
                   ('Dennis Buzukja', 'Jamall Emmers')
               ],
               [
-                  (125, -150), 
-                  (-110, -110),
-                  (165, -200),
+                  (105, -125), 
+                  (-115, -105),
                   (170, -210),
-                  (115, -140),
-                  (135, -165),
-                  (-200, 165),
-                  (-150, 125),
-                  (220, -275)
+                  (185, -225),
+                  (100, -120),
+                  (145, -175),
+                  (-225, 180),
+                  (-135, 110),
+                  (200, -250)
 
-              ], model, cols, 0.03, 0.2, 1007)
+              ], model, cols, 0.03, 0.15, 1007)
 
     print("FINISHED")

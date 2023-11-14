@@ -1,0 +1,56 @@
+In no particular order, we need to do the following to win on our own:
+- Reorganize project
+    - Put data into one directory
+    - Refactor code
+        - Clean up xgb.py
+        - Better directory hierarchy
+        - Separation of concerns - once we have clean data, there should be no 
+          no dependencies between the csv and the model (like train_stat_cols)
+    - Comment code
+    - Dockerize
+- Get more data
+    - Get more historical odds data
+    - Get prop bets
+- Improve data preparation and feature selection
+    - Make more meaningful aggregate statistics
+        - Make gender feature from weightclasses
+        - (Maybe) split weightclasses into light, middle, heavy
+        - Combine leg/body strikes
+        - Make macro features like striker, wrestler, etc.
+            - Possibly use grouping strategies like k-NN to find other broad groups
+- Improve machine learning techniques
+    - Try more models like SVM and NN
+    - Try ensemble strategies like voting
+- Improve betting strategy
+    - Explore multivariate kelly criterion
+    - Explore sharpe criterion
+    - Explore parlays
+- Explore more specific questions
+    - With prop bet data we can find more value opportunities
+- Create analytics
+    - Meaningful visualizations for each step of the way, each model, backtesting, etc.
+    - Store and track our data
+
+The future:
+- Automate entire process
+    - With one click of a button, we should be able to download the latest data,
+      clean the data, do feature selection specific to each type of model, determine
+      the ideal hyperparameters for each model, train them, produce bets, and publish 
+      analytics
+    - We should be able to serialize our final model such that we don't have to run 
+      this process every time. It takes a while to do the whole thing
+- Move our automated pipeline to the cloud
+    - With an automated pipeline with serializable outputs, we can easily share our 
+      model with others
+    - Move dockerized pipeline to cloud container
+    - Move input data, model, cached predictions, and analytics to appropriate
+      cloud storage
+    - Create an API
+        - Be able to pose questions to model and receive answers expediently
+    - Create a frontend
+        - GUI for API allows users to easily interact with our model
+- Create a more complex backend
+    - Allow account creation
+    - Account creation allows for payment system
+- Marketing and user acquisition
+    - Distant future... May need to hire people at this point

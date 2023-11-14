@@ -98,6 +98,7 @@ def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, al
         print (f'{f2["fighter_blue"]}: {len(f2.index)}')
         direct_diffs_index = list(map(lambda x: x[:-4] + '_direct_difference', stat_cols))
         direct_diffs = pd.Series(f1[stat_cols].values - f2[blue_stat_cols].values, direct_diffs_index)
+        # is_woman = latest_fight_red.filter(like='women').any(axis=1).astype(bool)
         ret = pd.DataFrame(pd.concat([f1, f2, date, elo_red, elo_blue, direct_diffs, elo_direct_diffs])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         return ret
     # except Exception as e:
