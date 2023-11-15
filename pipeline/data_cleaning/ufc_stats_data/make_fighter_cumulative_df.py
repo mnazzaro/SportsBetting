@@ -44,6 +44,7 @@ def _make_urls (group: pd.DataFrame, fight_details):
 
 def make_fighter_cumulative_df (fights_df: pd.DataFrame, fight_results_df: pd.DataFrame, 
                                 events_df: pd.DataFrame, fight_details_df: pd.DataFrame,
+                                write_fpath: Optional[str] = None,
                                 load_fpath: Optional[str] = None):
     if load_fpath:
         return pd.read_csv(load_fpath)
@@ -60,19 +61,17 @@ def make_fighter_cumulative_df (fights_df: pd.DataFrame, fight_results_df: pd.Da
             
     fight_stats_df['total_time'] = fight_stats_df.apply(lambda x: (x['round'] - 1) * 300 + x['last_round_time'], axis=1)
 
-    fight_stats_df.to_csv('fig_cum.csv')
-    print (fight_stats_df.head())
+    # fight_stats_df.to_csv('fig_cum.csv')
+    # print (fight_stats_df.head())
 
-    fight_stats_df = pd.read_csv('fig_cum.csv')
+    # fight_stats_df = pd.read_csv('fig_cum.csv') TODO: Remove this but have a feeling (since I haven't tested since removing) we will need to do a to_numeric or something. Idk why else it would be here
 
     print ('STARTING URLS IN MAKING FIG CUM')
 
-    fight_stats_df = fight_stats_df.groupby(['event', 'bout']).apply(lambda x: _make_urls(x, fight_details_df))
+    fight_stats_df = fight_stats_df.groupby(['event', 'bout']).apply(lambda x: _make_urls(x, fight_details_df)).reset_index (drop=True) # this reset index should remove the unnamed: 0 but it's untested
 
-    fight_stats_df.drop(columns=['Unnamed: 0'], inplace=True)
-
-    print(fight_stats_df.head())
-    fight_stats_df.to_csv('fight_stats_with_url.csv')
+    if write_fpath:
+        fight_stats_df.to_csv(write_fpath)
 
     return fight_stats_df
 

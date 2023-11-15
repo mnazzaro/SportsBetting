@@ -3,7 +3,8 @@
 from typing import Optional
 import pandas as pd
 
-def make_fight_engineered_stats (fight_stats_df: pd.DataFrame, load_fpath: Optional[str]=None):
+def make_fight_engineered_stats (fight_stats_df: pd.DataFrame, write_fpath: Optional[str]=None,
+                                 load_fpath: Optional[str]=None):
     if load_fpath:
         return pd.read_csv(load_fpath)
     
@@ -44,5 +45,8 @@ def make_fight_engineered_stats (fight_stats_df: pd.DataFrame, load_fpath: Optio
     fight_stats_df = fight_stats_df.sort_values(by=['fighter', 'date'], ascending=[True, True])
     fight_stats_df.date = pd.to_datetime(fight_stats_df.date)
     fight_stats_df['days_since_last_fight'] = (fight_stats_df.date - fight_stats_df.groupby('fighter')['date'].shift(1)).map(lambda x: float(x.days)) # TODO: This should prob be by url
+
+    if write_fpath:
+        fight_stats_df.to_csv(write_fpath)
 
     return fight_stats_df
