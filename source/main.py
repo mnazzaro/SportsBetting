@@ -7,20 +7,21 @@ import matplotlib.pyplot as plt
 
 import config
 
-from data_cleaning.ufc_stats_data.csv_handlers.handle_fight_results_df import FightResultsHandler
-from data_cleaning.ufc_stats_data.csv_handlers.handle_fighters_df import FightersHandler
-from data_cleaning.ufc_stats_data.csv_handlers.handle_fights_df import FightStatsHandler
-from data_cleaning.ufc_stats_data.csv_handlers.handle_events_df import EventsHandler
-from data_cleaning.ufc_stats_data.csv_handlers.handle_fight_details_df import FightDetailsHandler
-from data_cleaning.ufc_stats_data.make_fighter_cumulative_df import make_fighter_cumulative_df
-from data_cleaning.ufc_stats_data.make_fight_engineered_stats import make_fight_engineered_stats
+from pipeline.data_cleaning.ufc_stats_data.csv_handlers.handle_fight_results_df import FightResultsHandler
+from pipeline.data_cleaning.ufc_stats_data.csv_handlers.handle_fighters_df import FightersHandler
+from pipeline.data_cleaning.ufc_stats_data.csv_handlers.handle_fights_df import FightStatsHandler
+from pipeline.data_cleaning.ufc_stats_data.csv_handlers.handle_events_df import EventsHandler
+from pipeline.data_cleaning.ufc_stats_data.csv_handlers.handle_fight_details_df import FightDetailsHandler
+from pipeline.data_cleaning.ufc_stats_data.make_fighter_cumulative_df import make_fighter_cumulative_df
+from pipeline.data_cleaning.ufc_stats_data.make_fight_engineered_stats import make_fight_engineered_stats
 from pipeline.data_cleaning.ufc_stats_data.make_main_dataset import make_main_dataset
 
-from training.xgb import train_xgb, train_xgb_all
-from training.get_prediction_data import make_matchup
-from training.data_filters import remove_wmma
-from training.make_bets import make_bets
-from training.data_manager import full_set, train_test_sets
+from pipeline.training.models.xgb import train_xgb, train_xgb_all, OptunaTuning
+from pipeline.training.get_prediction_data import make_matchup
+from pipeline.training.data_filters import remove_wmma
+from pipeline.training.make_bets import make_bets
+from pipeline.training.data_manager import full_set, train_test_sets
+from pipeline.training.models.xgb_model import XGBoostModel
 
 
 if __name__=='__main__':
@@ -59,13 +60,33 @@ if __name__=='__main__':
     # all = pd.read_csv('all_training_data.csv')
     # cols, model = train_xgb(train, test)
 
-    all = pd.read_csv(f'{config.TRAINING_DATA_PATH}/all_training_data.csv')
-    cols, model = train_xgb_all(all)
+    # with full_set(all_data) as (X, y):
+    #     model = train_xgb_all(X, y)
 
-    with full_set(all_data) as (X, y):
-        train_xgb_all(X, y)
+    with train_test_sets(all_data) as (X_train, y_train, X_test, y_test):
+        # OptunaTuning(X_test, y_test, X_train, y_train).run()
+        model = XGBoostModel(
+                            verbosity=0,
+                            reg_lambda=0.023385762997113632,
+                            reg_alpha=0.003694895205081855,
+                            tree_method="hist",
+                            objective="binary:logistic",
+                            n_jobs=-1,
+                            learning_rate=0.0059107879099318415,
+                            min_child_weight=15,
+                            max_depth=7,
+                            max_delta_step=10,
+                            subsample=0.5370056644955932,
+                            colsample_bytree=0.5742787613391558,
+                            gamma=0.09815563994539223,
+                            n_estimators=143,
+                            eta=0.1134711359195081,
+                            seed=1
+                            )
+        model.fit(X_train, y_train)
+        model.report(X_test, y_test)
 
-    print ('testing time')
+    # print ('testing time')
 
     # odds = []
     # for i in range(40):
@@ -101,29 +122,29 @@ if __name__=='__main__':
     #     mean_odds.append(np.mean(odds[:, i]))
 
     # print (mean_odds)
-    make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
-              [
-                  ('Jiri Prochazka', 'Alex Pereira'),
-                  ('Tom Aspinall', "Sergei Pavlovich"),
-                  ('Jessica Andrade', 'Mackenzie Dern'),
-                  ('Matt Frevola', 'Benoit Saint Denis'),
-                  ('Diego Lopes', 'Pat Sabatini'),
-                  ('Tabatha Ricci', 'Loopy Godinez'),
-                  ('Jared Gordon', 'Mark Madsen'),
-                  ('John Castaneda', 'Kyung Ho Kang'),
-                  ('Dennis Buzukja', 'Jamall Emmers')
-              ],
-              [
-                  (105, -125), 
-                  (-115, -105),
-                  (170, -210),
-                  (185, -225),
-                  (100, -120),
-                  (145, -175),
-                  (-225, 180),
-                  (-135, 110),
-                  (200, -250)
+    # make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
+    #           [
+    #               ('Jiri Prochazka', 'Alex Pereira'),
+    #               ('Tom Aspinall', "Sergei Pavlovich"),
+    #               ('Jessica Andrade', 'Mackenzie Dern'),
+    #               ('Matt Frevola', 'Benoit Saint Denis'),
+    #               ('Diego Lopes', 'Pat Sabatini'),
+    #               ('Tabatha Ricci', 'Loopy Godinez'),
+    #               ('Jared Gordon', 'Mark Madsen'),
+    #               ('John Castaneda', 'Kyung Ho Kang'),
+    #               ('Dennis Buzukja', 'Jamall Emmers')
+    #           ],
+    #           [
+    #               (105, -125), 
+    #               (-115, -105),
+    #               (170, -210),
+    #               (185, -225),
+    #               (100, -120),
+    #               (145, -175),
+    #               (-225, 180),
+    #               (-135, 110),
+    #               (200, -250)
 
-              ], model, cols, 0.03, 0.15, 1007)
+    #           ], model, cols, 0.03, 0.15, 1007)
 
     print("FINISHED")
