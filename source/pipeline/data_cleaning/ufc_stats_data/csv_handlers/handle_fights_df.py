@@ -47,7 +47,6 @@ class FightStatsHandler (CSVHandler):
         self._separate_ratio_col('clinch')
         self._separate_ratio_col('ground')
 
-        
         self.df.sig_str_pct = self.df.sig_str_pct.map(self._remove_percent)
         self.df.td_pct = self.df.td_pct.map(self._remove_percent)
             

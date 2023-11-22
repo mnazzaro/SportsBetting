@@ -54,3 +54,12 @@ The future:
     - Account creation allows for payment system
 - Marketing and user acquisition
     - Distant future... May need to hire people at this point
+
+
+MISSING FEATURES:
+- Recent fights (last 3 fights)
+- Octagon size
+- Peak stat
+- Lowest stat
+- Change since last fight
+- Are defense stats right?

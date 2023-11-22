@@ -27,7 +27,6 @@ class FightersHandler (CSVHandler):
                 'losses': int(record.group(2)),
                 'wl_percentage': int(record.group(1)) / (int(record.group(2)) + int(record.group(1))),
                 'draws': int(record.group(3)),
-                'nc': nc
             }
         except:
             print (f'FAILED: {url}')
@@ -69,5 +68,5 @@ class FightersHandler (CSVHandler):
         self.df.loc[self.df['fighter'] == 'Daniel Lacerda', 'url'] = 'http://www.ufcstats.com/fighter-details/31bb0772f21cabd8'
         self.df['record'] = self.df.url.map(self._get_fighter_records)
         print (self.df[self.df['record'].isnull()].head())
-        self.df[['wins', 'losses', 'wl_percentage', 'draws', 'nc']] = self.df.record.apply(pd.Series)
+        self.df[['wins', 'losses', 'wl_percentage', 'draws']] = self.df.record.apply(pd.Series)
         self.df.drop(columns=['record'], inplace=True)

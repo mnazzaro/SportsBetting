@@ -15,7 +15,20 @@ class FightResultsHandler (CSVHandler):
         for w in self.weightclasses:
             if w in x:
                 return w
-        
+            
+    def _denser_weight_class_mapping (self, x) -> str:
+        weight_class = self._weight_class_mapping(x)
+        if self._is_wmma(weight_class) or weight_class in ['flyweight', 'bantamweight', 'featherweight']:
+            return 'dense_light'
+        elif weight_class in ['lightweight', 'welterweight', 'middleweight']:
+            return 'dense_medium'
+        else:
+            return 'dense_heavy'
+
+    def _is_wmma (self, x) -> str:
+        if 'women' in x:
+            return 1
+        return 0
 
     def clean (self):
         self.df.rename(columns={i: standardize_col(i) for i in self.df.columns}, inplace=True)
@@ -56,5 +69,7 @@ class FightResultsHandler (CSVHandler):
         self.df.time = self.df.time.map(time_to_sec)
 
         self.df.weightclass = self.df.weightclass.map(lambda x: x.lower().replace(' ', '_'), na_action='ignore')
-        self.df.weightclass = self.df.weightclass.map(self._weight_class_mapping)
+        self.df['wmma'] = self.df.weightclass.map(self._is_wmma)
+        # self.df.weightclass = self.df.weightclass.map(self._weight_class_mapping)
+        self.df.weightclass = self.df.weightclass.map(self._denser_weight_class_mapping)
         self.df = pd.get_dummies(self.df, columns=['weightclass'])
