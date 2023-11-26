@@ -68,7 +68,7 @@ def make_fighter_cumulative_df (fights_df: pd.DataFrame, fight_results_df: pd.Da
 
     print ('STARTING URLS IN MAKING FIG CUM')
 
-    fight_stats_df = fight_stats_df.groupby(['event', 'bout']).apply(lambda x: _make_urls(x, fight_details_df)).reset_index (drop=True) # this reset index should remove the unnamed: 0 but it's untested
+    fight_stats_df = fight_stats_df.groupby(['event', 'bout']).apply(lambda x: _make_urls(x, fight_details_df)).reset_index(drop=True) # this reset index should remove the unnamed: 0 but it's untested
 
     if write_fpath:
         fight_stats_df.to_csv(write_fpath)

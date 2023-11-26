@@ -24,7 +24,7 @@ def make_fight_engineered_stats (fight_stats_df: pd.DataFrame, write_fpath: Opti
                             set(filter(lambda x: x.startswith('weightclass_'), fight_stats_df.columns)))
 
     for col in round_quant_columns:
-        if not col.endswith('_allowed'):
+        if not (col.endswith('_allowed') or 'dense' in col or col == 'wmma'):
             """ Make differential columns """
             fight_stats_df[f'{col}_diff'] = fight_stats_df[col] - fight_stats_df[f'{col}_allowed']
 
@@ -34,7 +34,7 @@ def make_fight_engineered_stats (fight_stats_df: pd.DataFrame, write_fpath: Opti
     """ Make striking accuracy (ratio) columns """
     accuracy_columns = list(set(round_quant_columns) - set(['kd', 'kd_allowed', 'ctrl', 'ctrl_allowed', 'rev', 'rev_allowed']))
     for col in accuracy_columns:
-        if (not col.endswith('_att')) and (not col.endswith('_att_allowed')):
+        if (not col.endswith('_att')) and (not col.endswith('_att_allowed')) and not ('dense' in col or col == 'wmma'):
             if col.endswith('_allowed'):
                 name = col.split('_allowed')[0]
                 fight_stats_df[f'{col}_accuracy'] = fight_stats_df[col] / fight_stats_df[f'{name}_att_allowed']

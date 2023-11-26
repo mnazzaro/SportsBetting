@@ -26,6 +26,8 @@ class FightResultsHandler (CSVHandler):
             return 'dense_heavy'
 
     def _is_wmma (self, x) -> str:
+        if x is None:
+            return np.nan
         if 'women' in x:
             return 1
         return 0
@@ -69,7 +71,7 @@ class FightResultsHandler (CSVHandler):
         self.df.time = self.df.time.map(time_to_sec)
 
         self.df.weightclass = self.df.weightclass.map(lambda x: x.lower().replace(' ', '_'), na_action='ignore')
-        self.df['wmma'] = self.df.weightclass.map(self._is_wmma)
+        self.df['wmma'] = self.df.weightclass.map(self._is_wmma, na_action='ignore')
         # self.df.weightclass = self.df.weightclass.map(self._weight_class_mapping)
         self.df.weightclass = self.df.weightclass.map(self._denser_weight_class_mapping)
         self.df = pd.get_dummies(self.df, columns=['weightclass'])

@@ -81,7 +81,7 @@ if __name__=='__main__':
                             gamma=0.09815563994539223,
                             n_estimators=143,
                             eta=0.1134711359195081,
-                            seed=1
+                            seed=123
                             )
         model.fit(X_train, y_train)
         model.report(X_test, y_test)

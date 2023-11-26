@@ -44,10 +44,10 @@ def make_main_dataset (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame,
     fighter_cumulative_df = fight_stats_df.sort_values(by='date', ascending=True)
     split_date = fighter_cumulative_df.sort_values(by='date').loc[int(len(fighter_cumulative_df.index) * 0.85)].date
     print(split_date)
-    non_quant_stat_columns = list(set(['ko_tko', 'unanimous_decision', 'split_decision', 'submission', 'dr_stoppage', 'other']).union(
-                             set(filter(lambda x: 'weight' in x, fight_stats_df.columns))))
+    non_quant_stat_columns = list(set(['ko_tko', 'unanimous_decision', 'split_decision', 'submission', 'dr_stoppage', 'other'])) #.union(
+                             # set(filter(lambda x: 'weight' in x, fight_stats_df.columns))))
     stat_columns = list(set(fight_stats_df.columns) - set(['event', 'bout', 'fighter', 'date', 'method', 'time_format', 'referee', 'details', 'outcome', 'url'])
-                         - set(non_quant_stat_columns))
+                         - set(non_quant_stat_columns) - set(['wmma', 'weightclass_dense_light', 'weightclass_dense_medium', 'weightclass_dense_heavy']))
 
     failed_fights = []
     fighter_elo_data = {}
@@ -55,7 +55,7 @@ def make_main_dataset (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame,
         name = pd.Series([fighter, url], ['fighter', 'url'])
         tott = fighters_df[fighters_df['url'] == url][['weight', 'height', 'reach', 'age', 'stance_open_stance', \
                                                                'stance_orthodox', 'stance_sideways', 'stance_southpaw', \
-                                                                'stance_switch', 'wins', 'losses', 'draws', 'wl_percentage', 'nc']].squeeze()
+                                                                'stance_switch', 'wins', 'losses', 'draws', 'wl_percentage']].squeeze()
         base_stats = fighter_cumulative_df[(fighter_cumulative_df['fighter'] == fighter) & (fighter_cumulative_df['date'] < date)][stat_columns]
         mean = base_stats.mean().add_suffix('_mean')
         trend = base_stats.apply(_get_fighter_progression, axis=0, result_type='reduce', raw=True).add_suffix('_progression')
@@ -86,9 +86,10 @@ def make_main_dataset (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame,
                 else:
                     outcome = pd.Series([1], index=['outcome'])
             date = pd.Series([group.iloc[0]['date']], ['date'])
-            
-            
-            return pd.DataFrame(pd.concat([f1, f2, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
+            weight_class = fighter_cumulative_df[(fighter_cumulative_df['fighter'] == group.iloc[0]['fighter']) & (fighter_cumulative_df['date'] == group.iloc[0]['date'])][
+                ['wmma', 'weightclass_dense_light', 'weightclass_dense_medium', 'weightclass_dense_heavy']
+            ].squeeze()
+            return pd.DataFrame(pd.concat([f1, f2, weight_class, date, outcome])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         except Exception as e:
             print (f'{group.name}  ERROR: {e}')
             failures.append(group.name)
