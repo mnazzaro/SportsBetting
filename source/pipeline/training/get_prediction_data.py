@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+import config
 
 import numpy as np
 import pandas as pd
@@ -113,5 +114,5 @@ def make_matchup (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, fight
         )),
         columns=['fighter', 'url']
     )
-    all_data = pd.read_csv('all_training_data.csv')
+    all_data = pd.read_csv(f'{config.TRAINING_DATA_PATH}/dataset.csv')
     return make_matchup_df(fighters_df, fight_stats_df, all_data, group, fight_date)

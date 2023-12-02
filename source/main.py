@@ -20,7 +20,7 @@ from pipeline.training.models.xgb import train_xgb, train_xgb_all, OptunaTuning
 from pipeline.training.get_prediction_data import make_matchup
 from pipeline.training.data_filters import remove_wmma
 from pipeline.training.make_bets import make_bets
-from pipeline.training.data_manager import full_set, train_test_sets
+from pipeline.training.data_manager import full_set, train_test_sets, _X_feature_selector
 from pipeline.training.models.xgb_model import XGBoostModel
 
 
@@ -122,29 +122,18 @@ if __name__=='__main__':
     #     mean_odds.append(np.mean(odds[:, i]))
 
     # print (mean_odds)
-    # make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
-    #           [
-    #               ('Jiri Prochazka', 'Alex Pereira'),
-    #               ('Tom Aspinall', "Sergei Pavlovich"),
-    #               ('Jessica Andrade', 'Mackenzie Dern'),
-    #               ('Matt Frevola', 'Benoit Saint Denis'),
-    #               ('Diego Lopes', 'Pat Sabatini'),
-    #               ('Tabatha Ricci', 'Loopy Godinez'),
-    #               ('Jared Gordon', 'Mark Madsen'),
-    #               ('John Castaneda', 'Kyung Ho Kang'),
-    #               ('Dennis Buzukja', 'Jamall Emmers')
-    #           ],
-    #           [
-    #               (105, -125), 
-    #               (-115, -105),
-    #               (170, -210),
-    #               (185, -225),
-    #               (100, -120),
-    #               (145, -175),
-    #               (-225, 180),
-    #               (-135, 110),
-    #               (200, -250)
-
-    #           ], model, cols, 0.03, 0.15, 1007)
+    make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
+              [
+                  ('Arman Tsarukyan', 'Beneil Dariush'),
+                  ('Bobby Green', "Jalin Turner"),
+                  ('Deiveson Figueiredo', 'Rob Font'),
+                  ('Kelvin Gastelum', 'Sean Brady'),
+              ],
+              [
+                  (-300, 240), 
+                  (145, -175),
+                  (105, -125),
+                  (100, -120),
+              ], model, _X_feature_selector(all_data), 0.03, 0.15, 1007)
 
     print("FINISHED")
