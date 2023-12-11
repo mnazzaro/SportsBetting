@@ -1,4 +1,5 @@
 from datetime import datetime
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
@@ -63,7 +64,7 @@ if __name__=='__main__':
     # with full_set(all_data) as (X, y):
     #     model = train_xgb_all(X, y)
 
-    with train_test_sets(all_data) as (X_train, y_train, X_test, y_test):
+    with full_set(all_data) as (X_train, y_train):
         # OptunaTuning(X_test, y_test, X_train, y_train).run()
         model = XGBoostModel(
                             verbosity=0,
@@ -84,7 +85,9 @@ if __name__=='__main__':
                             seed=123
                             )
         model.fit(X_train, y_train)
-        model.report(X_test, y_test)
+        platt_calibrated_model = CalibratedClassifierCV(model.model, method='sigmoid', cv=5)
+        platt_calibrated_model.fit(X_train, y_train)
+        # model.report(X_test, y_test)
 
     # print ('testing time')
 
@@ -122,18 +125,21 @@ if __name__=='__main__':
     #     mean_odds.append(np.mean(odds[:, i]))
 
     # print (mean_odds)
+    
     make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
               [
-                  ('Arman Tsarukyan', 'Beneil Dariush'),
-                  ('Bobby Green', "Jalin Turner"),
-                  ('Deiveson Figueiredo', 'Rob Font'),
-                  ('Kelvin Gastelum', 'Sean Brady'),
+                  ('Song Yadong', 'Chris Gutierrez'),
+                  ('Tim Elliott', 'Sumudaerji'),
+                  ('Jamie Mullarkey', 'Nasrat Haqparast'),
+                  ('Anthony Smith', 'Khalil Rountree Jr.'),
+                #   ('Andre Muniz', 'Junyong Park'),
               ],
               [
-                  (-300, 240), 
-                  (145, -175),
-                  (105, -125),
-                  (100, -120),
-              ], model, _X_feature_selector(all_data), 0.03, 0.15, 1007)
+                  (-375, 280), 
+                  (-165, 135),
+                  (150, -185),
+                  (165, -200),
+                #   (165, -200)
+              ], platt_calibrated_model, _X_feature_selector(all_data), 0.03, 0.3, 1450)
 
     print("FINISHED")

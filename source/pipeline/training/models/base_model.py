@@ -88,6 +88,11 @@ class BaseModel (metaclass=MetricReportType):
         for metric_name, metric in self.metrics.items():
             print (f'{self.name} {metric_name}: {metric.__get__(self)(X_test, y_test)}')
 
+    def predict_proba (self, X_test: pd.DataFrame) -> np.ndarray: # TODO: Maybe we should just expose model and call directly
+        if not self.model:
+            raise UnfittedModelError (f"{self.name} model has not been fit")
+        return self.model.predict_proba(X_test)
+
     @Metric('Accuracy')
     def _get_accuracy (self, X_test: pd.DataFrame, y_test: pd.DataFrame) -> float: 
         return accuracy_score(y_test, self.predict(X_test))

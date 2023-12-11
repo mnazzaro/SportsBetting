@@ -68,6 +68,7 @@ def get_cum_fighter_stats (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFra
 
 def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, all_data: pd.DataFrame, group: pd.DataFrame, fight_date: datetime):
     # try:
+        fighter_cumulative_df = fight_stats_df.sort_values(by='date', ascending=True)
         url_red = group.iloc[0]['url']
         url_blue = group.iloc[1]['url']
         f1 = get_cum_fighter_stats(fighters_df, fight_stats_df,
@@ -99,8 +100,11 @@ def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, al
         print (f'{f2["fighter_blue"]}: {len(f2.index)}')
         direct_diffs_index = list(map(lambda x: x[:-4] + '_direct_difference', stat_cols))
         direct_diffs = pd.Series(f1[stat_cols].values - f2[blue_stat_cols].values, direct_diffs_index)
+        weight_class = fighter_cumulative_df[(fighter_cumulative_df['fighter'] == group.iloc[0]['fighter'])].iloc[-1][
+                ['wmma', 'weightclass_dense_light', 'weightclass_dense_medium', 'weightclass_dense_heavy']
+            ].squeeze()
         # is_woman = latest_fight_red.filter(like='women').any(axis=1).astype(bool)
-        ret = pd.DataFrame(pd.concat([f1, f2, date, elo_red, elo_blue, direct_diffs, elo_direct_diffs])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
+        ret = pd.DataFrame(pd.concat([f1, f2, weight_class, date, elo_red, elo_blue, direct_diffs, elo_direct_diffs])).transpose().reset_index(drop=True).set_index(['url_red', 'url_blue'])
         return ret
     # except Exception as e:
     #     print (str(e))
