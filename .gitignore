@@ -1,2 +1,3 @@
 scrape_ufc_stats
 *.csv
+*.pyc
