@@ -1,6 +1,7 @@
 from datetime import datetime
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 import pytz
@@ -53,8 +54,8 @@ if __name__=='__main__':
     all_fight_level_stats = make_fight_engineered_stats(cumulative_df, write_fpath=f'{config.CLEAN_DATA_PATH}/all_fight_level_stats.csv')
     
     all_data = make_main_dataset (fighters_df, all_fight_level_stats, fight_results_df, 
-                                  write_fpath=f'{config.TRAINING_DATA_PATH}/dataset_with_wl.csv',
-                                  load_fpath=f'{config.TRAINING_DATA_PATH}/dataset_with_wl.csv')
+                                  write_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv',
+                                  load_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv')
 
     print (all_data.head())
 
@@ -72,6 +73,7 @@ if __name__=='__main__':
     with train_test_sets(all_data, test_frac=0.35, shuffle=False) as (X_train, y_train, X_test, y_test, X_test_with_date):
         # OptunaTuning(X_test, y_test, X_train, y_train).run()
         model = XGBoostModel(
+                            device="cuda",
                             verbosity=0,
                             reg_lambda=0.023385762997113632,
                             reg_alpha=0.003694895205081855,
@@ -89,15 +91,18 @@ if __name__=='__main__':
                             eta=0.1134711359195081,
                             seed=123
                             )
+        scaler = StandardScaler()
+        X_train = X_train.replace([np.inf, -np.inf], [100, -100])
+        X_test = X_test.replace([np.inf, -np.inf], [100, -100])
+        X_test_with_date = X_test_with_date.replace([np.inf, -np.inf], [100, -100])
         model.fit(X_train, y_train)
         model.report(X_test, y_test)
         platt_calibrated_model = CalibratedClassifierCV(model.model, method='sigmoid', cv=5)
         platt_calibrated_model.fit(X_train, y_train)
-
-        moneyline_df = clean_odds_data('scrape_best_fight_odds/moneyline_data_at_close.csv')
-        X_test_with_date['prediction'] = platt_calibrated_model.predict_proba(X_test)[:,1]
-        compare_predictions_to_odds_groupby_date(X_test_with_date, moneyline_df,
-                                                 1000, 0.05, 0.25)
+        # moneyline_df = clean_odds_data('scrape_best_fight_odds/moneyline_data_at_close.csv')
+        # X_test_with_date['prediction'] = platt_calibrated_model.predict_proba(X_test)[:,1]
+        # compare_predictions_to_odds_groupby_date(X_test_with_date, moneyline_df,
+        #                                          1000, 0.05, 0.25)
 
     # print ('testing time')
 

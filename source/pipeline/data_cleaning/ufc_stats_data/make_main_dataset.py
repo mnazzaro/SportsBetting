@@ -187,7 +187,9 @@ def make_main_dataset (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame,
     blues = list(map(lambda x: x[:-4] + '_blue', reds))
     for col in reds:
         if col != 'fighter_red':
-            all[col[:-4] + '_direct_difference'] = all[col] - all[col[:-4]+'_blue']
+            print (col)
+            # all[col] = all[col].apply(pd.to_numeric)
+            all[col[:-4] + '_direct_difference'] =  all[col].astype(np.float32) - all[col[:-4]+'_blue'].astype(np.float32)
             
     # all.loc[random_indices, reds], all.loc[random_indices, blues] = all.loc[random_indices, blues].values, all.loc[random_indices, reds].values
     # all.loc[random_indices, 'outcome'] = all.loc[random_indices].outcome.map(lambda x: 0 if x == 1 else 1)
@@ -196,7 +198,7 @@ def make_main_dataset (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame,
     swapped[reds], swapped[blues] = swapped[blues], swapped[reds]
     swapped[list(map(lambda x: x[:-4] + '_direct_difference', filter(lambda x: x != 'fighter_red', reds)))] = swapped[list(map(lambda x: x[:-4] + '_direct_difference', filter(lambda x: x != 'fighter_red', reds)))] * -1
     swapped['outcome'] = swapped.outcome.map(lambda x: 0 if x == 1 else 1)
-    swapped.index = swapped.index.swaplevel('url_red', 'url_blue')
+    swapped = swapped.rename(index={'url_red': 'url_blue', 'url_blue': 'url_red'})
     print (all[['fighter_red', 'fighter_blue', 'outcome']].head())
     print (swapped[['fighter_red', 'fighter_blue', 'outcome']].head())
     all = pd.concat([all, swapped]).sort_values(by='date')
