@@ -17,7 +17,7 @@ def train_test_sets (dataset: pd.DataFrame, test_frac=0.2, shuffle=True):
     X_features = _X_feature_selector(dataset)
     y_features = _y_feature_selector()
     train, test = train_test_split(dataset, shuffle=shuffle, test_size=test_frac)
-    yield train[X_features].apply(pd.to_numeric), train[y_features], test[X_features].apply(pd.to_numeric), test[y_features]
+    yield train[X_features].apply(pd.to_numeric), train[y_features], test[X_features].apply(pd.to_numeric), test[y_features], test[X_features + ['event', 'bout', 'date', 'fighter_red', 'fighter_blue', 'outcome']]
 
 @contextmanager
 def full_set (dataset: pd.DataFrame, shuffle=True):
@@ -27,4 +27,4 @@ def full_set (dataset: pd.DataFrame, shuffle=True):
         temp = dataset.sample(frac=1).reset_index(drop=True)
         yield temp[X_features], temp[y_features]
     else:
-        yield dataset[X_features], temp[y_features]
+        yield dataset[X_features], dataset[y_features]

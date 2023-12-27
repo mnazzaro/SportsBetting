@@ -43,14 +43,16 @@ def get_cum_fighter_stats (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFra
     name = pd.Series([fighter, url], ['fighter', 'url'])
     
     try:
-        tott = fighters_df[fighters_df['url'] == url].iloc[-1][['weight', 'height', 'reach', 'age', 'stance_open_stance', \
+        tott = fighters_df[fighters_df['url'] == url].iloc[-1][['weight', 'height', 'reach', 'stance_open_stance', \
                                                                 'stance_orthodox', 'stance_sideways', 'stance_southpaw', \
-                                                                'stance_switch', 'wins', 'losses', 'draws', 'wl_percentage', 'nc']].squeeze()
+                                                                'stance_switch',]].squeeze()
     except: 
         print (f"Couldn't find {fighters_df['url'] == url} for {fighter}")
-        tott = fighters_df[fighters_df['fighter'] == fighter][['weight', 'height', 'reach', 'age', 'stance_open_stance', \
+        tott = fighters_df[fighters_df['fighter'] == fighter][['weight', 'height', 'reach', 'stance_open_stance', \
                                                                 'stance_orthodox', 'stance_sideways', 'stance_southpaw', \
-                                                                'stance_switch', 'wins', 'losses', 'draws', 'wl_percentage', 'nc']].squeeze()
+                                                                'stance_switch']].squeeze()
+    moving_tott = pd.Series(fighters_df[fighters_df['url'] == url][['age', 'wins', 'losses', 'wl_percentage']].squeeze(), 
+                            ['age', 'wins', 'losses', 'wl_percentage'])
     base_stats = fighter_cumulative_df[fighter_cumulative_df['fighter'] == fighter][stat_columns]
     mean = base_stats.mean().add_suffix('_mean')
     trend = base_stats.apply(_get_fighter_progression, axis=0, result_type='reduce', raw=True).add_suffix('_progression')
@@ -64,7 +66,7 @@ def get_cum_fighter_stats (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFra
         print (e)
         print (f"Didn't work for {fighter}")
         days_since_last_fight = pd.Series([np.nan], ['days_since_last_fight'])
-    return pd.concat([name, tott, non_quant_stats, days_since_last_fight, mean, trend]).add_suffix(suffix)
+    return pd.concat([name, tott, non_quant_stats, moving_tott, days_since_last_fight, mean, trend]).add_suffix(suffix)
 
 def make_matchup_df (fighters_df: pd.DataFrame, fight_stats_df: pd.DataFrame, all_data: pd.DataFrame, group: pd.DataFrame, fight_date: datetime):
     # try:

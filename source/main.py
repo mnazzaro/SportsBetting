@@ -23,6 +23,7 @@ from pipeline.training.data_filters import remove_wmma
 from pipeline.training.make_bets import make_bets
 from pipeline.training.data_manager import full_set, train_test_sets, _X_feature_selector
 from pipeline.training.models.xgb_model import XGBoostModel
+from pipeline.training.test_against_odds import compare_predictions_to_odds_groupby_date, clean_odds_data
 
 
 if __name__=='__main__':
@@ -52,8 +53,12 @@ if __name__=='__main__':
     all_fight_level_stats = make_fight_engineered_stats(cumulative_df, write_fpath=f'{config.CLEAN_DATA_PATH}/all_fight_level_stats.csv')
     
     all_data = make_main_dataset (fighters_df, all_fight_level_stats, fight_results_df, 
-                                  write_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv',
-                                  load_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv')
+                                  write_fpath=f'{config.TRAINING_DATA_PATH}/dataset_with_wl.csv',
+                                  load_fpath=f'{config.TRAINING_DATA_PATH}/dataset_with_wl.csv')
+
+    print (all_data.head())
+
+    # all_data = make_main_dataset (fighters_df, all_fight_level_
 
     # train, test = train_test_split(pd.read_csv('all_training_data.csv'), shuffle=False, test_size=0.25)
     # train, test = remove_wmma(train), remove_wmma(test)
@@ -64,7 +69,7 @@ if __name__=='__main__':
     # with full_set(all_data) as (X, y):
     #     model = train_xgb_all(X, y)
 
-    with full_set(all_data) as (X_train, y_train):
+    with train_test_sets(all_data, test_frac=0.35, shuffle=False) as (X_train, y_train, X_test, y_test, X_test_with_date):
         # OptunaTuning(X_test, y_test, X_train, y_train).run()
         model = XGBoostModel(
                             verbosity=0,
@@ -85,9 +90,14 @@ if __name__=='__main__':
                             seed=123
                             )
         model.fit(X_train, y_train)
+        model.report(X_test, y_test)
         platt_calibrated_model = CalibratedClassifierCV(model.model, method='sigmoid', cv=5)
         platt_calibrated_model.fit(X_train, y_train)
-        # model.report(X_test, y_test)
+
+        moneyline_df = clean_odds_data('scrape_best_fight_odds/moneyline_data_at_close.csv')
+        X_test_with_date['prediction'] = platt_calibrated_model.predict_proba(X_test)[:,1]
+        compare_predictions_to_odds_groupby_date(X_test_with_date, moneyline_df,
+                                                 1000, 0.05, 0.25)
 
     # print ('testing time')
 
@@ -125,21 +135,22 @@ if __name__=='__main__':
     #     mean_odds.append(np.mean(odds[:, i]))
 
     # print (mean_odds)
+
     
-    make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
-              [
-                  ('Song Yadong', 'Chris Gutierrez'),
-                  ('Tim Elliott', 'Sumudaerji'),
-                  ('Jamie Mullarkey', 'Nasrat Haqparast'),
-                  ('Anthony Smith', 'Khalil Rountree Jr.'),
-                #   ('Andre Muniz', 'Junyong Park'),
-              ],
-              [
-                  (-375, 280), 
-                  (-165, 135),
-                  (150, -185),
-                  (165, -200),
-                #   (165, -200)
-              ], platt_calibrated_model, _X_feature_selector(all_data), 0.03, 0.3, 1450)
+    # make_bets(fighters_df, all_fight_level_stats, datetime(2023, 11, 11),
+    #           [
+    #               ('Leon Edwards', 'Colby Covington'),
+    #               ('Alexandre Pantoja', 'Brandon Royval'),
+    #               ('Shavkat Rakhmonov', 'Stephen Thompson'),
+    #               ('Tony Ferguson', 'Paddy Pimblett'),
+    #               ('Josh Emmett', 'Bryce Mitchell'),
+    #           ],
+    #           [
+    #               (-162, 136), 
+    #               (-192, 160),
+    #               (-625, 455),
+    #               (250, -310),
+    #               (195, -238)
+    #           ], platt_calibrated_model, _X_feature_selector(all_data), 0.03, 0.3, 1000)
 
     print("FINISHED")
