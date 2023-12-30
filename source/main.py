@@ -33,7 +33,7 @@ if __name__=='__main__':
 
     print(f"Starting FightersHandler at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
     # fighters_df = FightersHandler(f'{config.RAW_DATA_PATH}/ufc_fighter_tott.csv')(f'{config.CLEAN_DATA_PATH}/fighters_df.csv')
-    fighters_df = FightersHandler(f'{config.CLEAN_DATA_PATH}/fighters_df.csv', preload=True)()
+    fighters_df = FightersHandler(f'{config.CLEAN_DATA_PATH}/fighters_df.csv', preload=False)()
 
     print(f"Starting FightStatsHandler at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
     fight_stats_df = FightStatsHandler(f'{config.RAW_DATA_PATH}/ufc_fight_stats.csv')(f'{config.CLEAN_DATA_PATH}/fight_stats_df.csv')
@@ -46,16 +46,16 @@ if __name__=='__main__':
 
     print(f"Starting make cumulative df at {datetime.now(tz=pytz.timezone('US/Eastern'))}")
     cumulative_df = make_fighter_cumulative_df(fight_stats_df, fight_results_df, events_df, fight_details_df, 
-                                               write_fpath=f'{config.CLEAN_DATA_PATH}/fight_stats_with_url.csv',
-                                               load_fpath=f'{config.CLEAN_DATA_PATH}/fight_stats_with_url.csv')
+                                               write_fpath=f'{config.CLEAN_DATA_PATH}/fight_stats_with_url.csv')
+                                              #  load_fpath=f'{config.CLEAN_DATA_PATH}/fight_stats_with_url.csv')
 
     print (cumulative_df.head())
 
     all_fight_level_stats = make_fight_engineered_stats(cumulative_df, write_fpath=f'{config.CLEAN_DATA_PATH}/all_fight_level_stats.csv')
     
     all_data = make_main_dataset (fighters_df, all_fight_level_stats, fight_results_df, 
-                                  write_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv',
-                                  load_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv')
+                                  write_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv')
+                                  # load_fpath=f'{config.TRAINING_DATA_PATH}/dataset.csv')
 
     print (all_data.head())
 
@@ -73,7 +73,7 @@ if __name__=='__main__':
     with train_test_sets(all_data, test_frac=0.35, shuffle=False) as (X_train, y_train, X_test, y_test, X_test_with_date):
         # OptunaTuning(X_test, y_test, X_train, y_train).run()
         model = XGBoostModel(
-                            device="cuda",
+                            # device="cuda",
                             verbosity=0,
                             reg_lambda=0.023385762997113632,
                             reg_alpha=0.003694895205081855,
